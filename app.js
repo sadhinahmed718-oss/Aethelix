@@ -20,6 +20,8 @@ let currentUser = { name: 'Guest User', email: 'guest@zynqra.com', avatar: 'http
 let activeVideo = null;
 let activeChatContact = null;
 let globalAllVideos = [];
+let globalAllUsers = []; // গ্লোবাল ইউজার লিস্ট সার্চ ইঞ্জিনের জন্য
+let unsubscribeChat = null; // রিয়েল-টাইম চ্যাট লিসেনার ম্যানেজ করার জন্য
 
 // --- Advanced XSS Protection Utility ---
 function sanitizeHTML(str) {
@@ -41,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadFriendsList();
     loadMessengerContacts();
     setupSearchEngine();
+    setupFriendSearchEngine(); // ফ্রেন্ডস সার্চ ইঞ্জিন ইনিশিয়ালাইজেশন
     setupOfflineDownloadsUI();
     setupProfileEditModal();
     setupEventListeners();
@@ -101,14 +104,20 @@ function setupNavigation() {
         });
     });
 
-    document.getElementById('hamburgerBtn').addEventListener('click', () => {
-        document.getElementById('sidebar').classList.toggle('-translate-x-full');
-    });
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    if (hamburgerBtn) {
+        hamburgerBtn.addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+        });
+    }
 
-    document.getElementById('logoHome').addEventListener('click', (e) => {
-        e.preventDefault();
-        switchPage('home');
-    });
+    const logoHome = document.getElementById('logoHome');
+    if (logoHome) {
+        logoHome.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchPage('home');
+        });
+    }
 }
 
 function switchPage(pageId) {
@@ -117,7 +126,8 @@ function switchPage(pageId) {
     if (target) target.classList.remove('hidden');
     
     if (window.innerWidth < 768) {
-        document.getElementById('sidebar').classList.add('-translate-x-full');
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) sidebar.classList.add('-translate-x-full');
     }
 
     if (pageId === 'analytics') loadAnalytics();
@@ -152,9 +162,14 @@ function loadHomeFeed(category = 'all') {
         filtered.forEach(video => {
             const card = document.createElement('div');
             card.className = 'bg-dark-800 border border-dark-700 rounded-3xl overflow-hidden shadow-lg hover:border-brand-cyan transition cursor-pointer flex flex-col group';
+            
+            const thumbContent = video.thumbnailUrl 
+                ? `<img src="${sanitizeHTML(video.thumbnailUrl)}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">`
+                : `<video src="${sanitizeHTML(video.videoUrl)}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300 preload="metadata"></video>`;
+
             card.innerHTML = `
                 <div class="relative aspect-video bg-black overflow-hidden">
-                    <img src="${sanitizeHTML(video.thumbnailUrl)}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                    ${thumbContent}
                     <span class="absolute bottom-2 right-2 bg-black/80 text-white text-[9px] px-2 py-0.5 rounded-md font-bold">${sanitizeHTML(video.aspectRatio)}</span>
                 </div>
                 <div class="p-3.5 flex space-x-3 flex-1">
@@ -219,16 +234,16 @@ function setupSearchEngine() {
             if (suggestionBox) {
                 suggestionBox.innerHTML = '';
                 if (matchedVideos.length === 0) {
-                    suggestionBox.innerHTML = `<div class="p-3 text-gray-400 text-xs">No matching videos found</div>`;
+                    suggestionBox.innerHTML = `<div class="p-3 text-gray-400 text-xs">No matching videos or channels found</div>`;
                 } else {
                     matchedVideos.slice(0, 5).forEach(video => {
                         const item = document.createElement('div');
                         item.className = 'p-2.5 flex items-center space-x-3 hover:bg-dark-700 cursor-pointer border-b border-dark-700/50';
                         item.innerHTML = `
-                            <img src="${sanitizeHTML(video.thumbnailUrl)}" class="w-12 h-8 object-cover rounded-lg">
+                            <img src="${sanitizeHTML(video.thumbnailUrl || video.creatorAvatar)}" class="w-12 h-8 object-cover rounded-lg">
                             <div class="truncate">
                                 <div class="font-bold text-white text-xs truncate">${sanitizeHTML(video.title)}</div>
-                                <div class="text-[9px] text-gray-400">${sanitizeHTML(video.creatorName)}</div>
+                                <div class="text-[9px] text-gray-400">By ${sanitizeHTML(video.creatorName)}</div>
                             </div>
                         `;
                         item.onclick = () => {
@@ -253,6 +268,7 @@ function setupSearchEngine() {
             const grid = document.getElementById('videoGrid');
             if (!grid) return;
             grid.innerHTML = '';
+            
             const matchedVideos = globalAllVideos.filter(v => 
                 (v.title && v.title.toLowerCase().includes(query)) || 
                 (v.creatorName && v.creatorName.toLowerCase().includes(query))
@@ -268,13 +284,13 @@ function setupSearchEngine() {
                 card.className = 'bg-dark-800 border border-dark-700 rounded-3xl overflow-hidden shadow-lg hover:border-brand-cyan transition cursor-pointer flex flex-col group';
                 card.innerHTML = `
                     <div class="relative aspect-video bg-black overflow-hidden">
-                        <img src="${sanitizeHTML(video.thumbnailUrl)}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                        <img src="${sanitizeHTML(video.thumbnailUrl || video.creatorAvatar)}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
                     </div>
                     <div class="p-3.5 flex space-x-3 flex-1">
                         <img src="${sanitizeHTML(video.creatorAvatar)}" class="w-8 h-8 rounded-full object-cover border border-dark-600">
                         <div class="flex-1 space-y-1">
                             <h3 class="font-bold text-white text-xs line-clamp-2">${sanitizeHTML(video.title)}</h3>
-                            <p class="text-[9px] text-gray-500">${video.views || 0} views</p>
+                            <p class="text-[9px] text-gray-500">${video.views || 0} views • By ${sanitizeHTML(video.creatorName)}</p>
                         </div>
                     </div>
                 `;
@@ -284,6 +300,47 @@ function setupSearchEngine() {
         };
 
         input.onkeypress = (e) => { if (e.key === 'Enter') executeSearch(); };
+    });
+}
+
+// --- FRIEND & SUBSCRIBER SEARCH ENGINE (নতুন যুক্ত করা হয়েছে) ---
+function setupFriendSearchEngine() {
+    const friendSearchInput = document.getElementById('friendSearchInput');
+    if (!friendSearchInput) return;
+
+    friendSearchInput.addEventListener('input', (e) => {
+        const query = sanitizeHTML(e.target.value.toLowerCase().trim());
+        const container = document.getElementById('friendsListContainer');
+        if (!container) return;
+
+        const filteredUsers = globalAllUsers.filter(user => 
+            (currentUser && user.email === currentUser.email) ? false : (user.name && user.name.toLowerCase().includes(query)) || 
+            (user.email && user.email.toLowerCase().includes(query))
+        );
+
+        container.innerHTML = '';
+        if (filteredUsers.length === 0) {
+            container.innerHTML = `<p class="text-gray-500 text-xs col-span-full text-center py-5">No friends or creators found.</p>`;
+            return;
+        }
+
+        filteredUsers.forEach(user => {
+            const card = document.createElement('div');
+            card.className = 'bg-dark-800 border border-dark-700 p-3.5 rounded-2xl flex items-center justify-between shadow';
+            card.innerHTML = `
+                <div class="flex items-center space-x-3">
+                    <img src="${sanitizeHTML(user.avatar)}" class="w-10 h-10 rounded-full object-cover border border-brand-cyan">
+                    <div>
+                        <h4 class="font-bold text-white text-xs">${sanitizeHTML(user.name)}</h4>
+                        <p class="text-[10px] text-gray-400">${user.subs || 0} subscribers</p>
+                    </div>
+                </div>
+                <button onclick="openChatWithUser('${sanitizeHTML(user.email)}')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center space-x-1.5 shadow">
+                    <i class="fa-solid fa-message"></i> <span>Message</span>
+                </button>
+            `;
+            container.appendChild(card);
+        });
     });
 }
 
@@ -325,7 +382,7 @@ function loadOfflineDownloadsUI() {
         card.className = 'bg-dark-900 border border-dark-700 rounded-3xl overflow-hidden shadow-md flex flex-col group';
         card.innerHTML = `
             <div class="relative aspect-video bg-black overflow-hidden">
-                <img src="${sanitizeHTML(video.thumbnailUrl)}" class="w-full h-full object-cover">
+                <img src="${sanitizeHTML(video.thumbnailUrl || video.creatorAvatar)}" class="w-full h-full object-cover">
                 <span class="absolute bottom-2 left-2 bg-emerald-500 text-dark-900 text-[8px] px-2 py-0.5 rounded font-bold"><i class="fa-solid fa-check"></i> Offline Ready</span>
             </div>
             <div class="p-3 flex items-center justify-between">
@@ -349,7 +406,7 @@ function loadHomeShortsCarousel(videos) {
         const card = document.createElement('div');
         card.className = 'w-28 sm:w-32 shrink-0 bg-black rounded-2xl overflow-hidden border border-dark-700 relative group cursor-pointer aspect-[9/16] shadow-md';
         card.innerHTML = `
-            <img src="${sanitizeHTML(short.thumbnailUrl)}" class="w-full h-full object-cover group-hover:scale-105 transition">
+            <img src="${sanitizeHTML(short.thumbnailUrl || short.creatorAvatar)}" class="w-full h-full object-cover group-hover:scale-105 transition">
             <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-2.5">
                 <p class="text-[10px] font-bold text-white line-clamp-2">${sanitizeHTML(short.title)}</p>
                 <span class="text-[8px] text-gray-300">${short.views || 0} views</span>
@@ -461,7 +518,6 @@ function openVideoModal(video) {
         adOverlay.classList.add('hidden');
         player.play();
         
-        // Anti-Bot View Protection (সেশনে একবারই ভিউ কাউন্ট হবে)
         const viewKey = `viewed_video_${video.id}`;
         if (!sessionStorage.getItem(viewKey)) {
             sessionStorage.setItem(viewKey, 'true');
@@ -469,7 +525,6 @@ function openVideoModal(video) {
         }
     };
 
-    // এক লাইক রেস্ট্রিকশন লজিক
     const likeBtn = document.getElementById('modalLikeBtn');
     likeBtn.onclick = () => {
         if (!currentUser || currentUser.email === 'guest@zynqra.com') {
@@ -490,7 +545,6 @@ function openVideoModal(video) {
         });
     };
 
-    // এক সাবস্ক্রাইব রেস্ট্রিকশন লজিক
     const subscribeBtn = document.getElementById('modalSubscribeBtn');
     subscribeBtn.onclick = () => {
         if (!currentUser || currentUser.email === 'guest@zynqra.com') {
@@ -550,7 +604,7 @@ function renderRelatedVideos(currentVideo) {
                 const card = document.createElement('div');
                 card.className = 'flex space-x-2.5 cursor-pointer group';
                 card.innerHTML = `
-                    <img src="${sanitizeHTML(video.thumbnailUrl)}" class="w-28 aspect-video object-cover rounded-xl border border-dark-700 group-hover:border-brand-cyan transition">
+                    <img src="${sanitizeHTML(video.thumbnailUrl || video.creatorAvatar)}" class="w-28 aspect-video object-cover rounded-xl border border-dark-700 group-hover:border-brand-cyan transition">
                     <div class="flex-1 truncate">
                         <h5 class="font-bold text-white text-xs line-clamp-2">${sanitizeHTML(video.title)}</h5>
                         <div class="text-[9px] text-gray-400 mt-1">${sanitizeHTML(video.creatorName)}</div>
@@ -564,14 +618,17 @@ function renderRelatedVideos(currentVideo) {
     });
 }
 
-// --- CHAT & MESSENGER ---
+// --- CHAT & MESSENGER (সংশোধিত: উভয় পক্ষের রিয়েল-টাইম চ্যাট সিঙ্ক ঠিক করা হয়েছে) ---
 function loadFriendsList() {
     db.collection("users").get().then((snapshot) => {
         const container = document.getElementById('friendsListContainer');
         if (!container) return;
         container.innerHTML = '';
-        snapshot.forEach(doc => {
-            const user = doc.data();
+        let users = [];
+        snapshot.forEach(doc => users.push(doc.data()));
+        globalAllUsers = users;
+
+        users.forEach(user => {
             if (currentUser && user.email === currentUser.email) return;
             const card = document.createElement('div');
             card.className = 'bg-dark-800 border border-dark-700 p-3.5 rounded-2xl flex items-center justify-between shadow';
@@ -641,8 +698,12 @@ function renderChatMessages() {
     box.innerHTML = '';
     if (!activeChatContact || !currentUser) return;
 
+    if (unsubscribeChat) {
+        unsubscribeChat();
+    }
+
     const chatId = [currentUser.email, activeChatContact.email].sort().join('_');
-    db.collection("chats").doc(chatId).collection("messages").orderBy("timestamp").onSnapshot((snapshot) => {
+    unsubscribeChat = db.collection("chats").doc(chatId).collection("messages").orderBy("timestamp", "asc").onSnapshot((snapshot) => {
         box.innerHTML = '';
         if (snapshot.empty) {
             box.innerHTML = `<div class="m-auto text-center text-gray-500 text-[10px] bg-[#182229] px-3 py-1.5 rounded-xl">No messages yet. Say hello!</div>`;
@@ -729,8 +790,8 @@ function setupProfileEditModal() {
             alert('Updating profile...');
 
             if (imageFile) {
-                const cloudName = "u078nis6"; //[span_1](start_span)[span_1](end_span)
-                const uploadPreset = "zynqra_preset"; //
+                const cloudName = "u078nis6";
+                const uploadPreset = "zynqra_preset";
                 const formData = new FormData();
                 formData.append('file', imageFile);
                 formData.append('upload_preset', uploadPreset);
@@ -789,37 +850,67 @@ function setupEventListeners() {
             const videoFile = document.getElementById('videoFile').files[0];
             const thumbFile = document.getElementById('thumbnailFile').files[0];
 
-            if (!videoFile || !thumbFile) {
-                alert('Please select both video and thumbnail files.');
+            if (!videoFile) {
+                alert('Please select a video file.');
                 return;
             }
 
-            alert('Uploading files to Cloudinary...');
+            const submitBtn = uploadForm.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn ? submitBtn.innerText : 'Upload';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerText = 'Uploading video to Cloudinary... 0%';
+            }
 
-            const cloudName = "u078nis6"; //[span_2](start_span)[span_2](end_span)
-            const uploadPreset = "zynqra_preset"; //
+            const cloudName = "u078nis6";
+            const uploadPreset = "zynqra_preset";
 
-            async function uploadToCloudinary(file, resourceType) {
-                const formData = new FormData();
-                formData.append('file', file);
-                formData.append('upload_preset', uploadPreset);
+            async function uploadToCloudinary(file, resourceType, onProgress) {
+                return new Promise((resolve, reject) => {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('upload_preset', uploadPreset);
 
-                const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`, {
-                    method: 'POST',
-                    body: formData
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`, true);
+
+                    xhr.upload.onprogress = (e) => {
+                        if (e.lengthComputable && onProgress) {
+                            const percent = Math.round((e.loaded / e.total) * 100);
+                            onProgress(percent);
+                        }
+                    };
+
+                    xhr.onload = () => {
+                        if (xhr.status === 200) {
+                            const data = JSON.parse(xhr.responseText);
+                            if (data.secure_url) resolve(data.secure_url);
+                            else reject(new Error('Upload failed'));
+                        } else {
+                            reject(new Error('Cloudinary upload error'));
+                        }
+                    };
+
+                    xhr.onerror = () => reject(new Error('Network error during upload'));
+                    xhr.send(formData);
                 });
-                const data = await response.json();
-                if (data.secure_url) {
-                    return data.secure_url;
-                } else {
-                    throw new Error(data.error ? data.error.message : 'Upload failed');
-                }
             }
 
             try {
-                const videoUrl = await uploadToCloudinary(videoFile, 'video');
-                const thumbnailUrl = await uploadToCloudinary(thumbFile, 'image');
+                if (submitBtn) submitBtn.innerText = 'Uploading video...';
+                const videoUrl = await uploadToCloudinary(videoFile, 'video', (pct) => {
+                    if (submitBtn) submitBtn.innerText = `Uploading Video: ${pct}%`;
+                });
 
+                let thumbnailUrl = '';
+                if (thumbFile) {
+                    if (submitBtn) submitBtn.innerText = 'Uploading thumbnail...';
+                    thumbnailUrl = await uploadToCloudinary(thumbFile, 'image', (pct) => {
+                        if (submitBtn) submitBtn.innerText = `Uploading Thumbnail: ${pct}%`;
+                    });
+                }
+
+                if (submitBtn) submitBtn.innerText = 'Saving to Database...';
                 await db.collection("videos").add({
                     title, category, aspectRatio, videoUrl, thumbnailUrl,
                     creatorName: currentUser.name,
@@ -829,11 +920,16 @@ function setupEventListeners() {
                     date: new Date().toISOString().split('T')[0]
                 });
 
-                alert('Video successfully uploaded via Cloudinary & saved to Firebase!');
+                alert('Video successfully uploaded and published on Zynqra!');
                 uploadForm.reset();
                 switchPage('home');
             } catch (error) {
                 alert('Upload Error: ' + error.message);
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = originalBtnText;
+                }
             }
         });
     }
@@ -885,8 +981,10 @@ function setupEventListeners() {
         document.getElementById('videoModal').classList.add('hidden');
         document.getElementById('modalVideoPlayer').pause();
     };
-    document.getElementById('closeVideoModalMobile').onclick = closeModal;
-    document.getElementById('closeVideoModalDesktop').onclick = closeModal;
+    const closeMob = document.getElementById('closeVideoModalMobile');
+    const closeDesk = document.getElementById('closeVideoModalDesktop');
+    if (closeMob) closeMob.onclick = closeModal;
+    if (closeDesk) closeDesk.onclick = closeModal;
 
     const toggleCommentsHeader = document.getElementById('toggleCommentsHeader');
     const commentsSectionBody = document.getElementById('commentsSectionBody');
@@ -997,7 +1095,7 @@ function loadUserProfile() {
             const v = doc.data();
             myGrid.innerHTML += `
                 <div class="bg-dark-900 border border-dark-700 rounded-2xl overflow-hidden p-2.5 flex space-x-2.5">
-                    <img src="${sanitizeHTML(v.thumbnailUrl)}" class="w-20 h-12 rounded-xl object-cover">
+                    <img src="${sanitizeHTML(v.thumbnailUrl || v.creatorAvatar)}" class="w-20 h-12 rounded-xl object-cover">
                     <div class="flex-1 truncate">
                         <h4 class="font-bold text-white text-[11px] truncate">${sanitizeHTML(v.title)}</h4>
                         <div class="text-[9px] text-gray-400 mt-1">${v.views || 0} views • ${v.likes || 0} likes</div>
