@@ -162,8 +162,8 @@
                     <input type="file" id="videoFile" accept="video/*" required class="w-full bg-dark-900 border border-dark-600 rounded-2xl p-2.5 text-gray-300 file:mr-3 file:py-1 file:px-3 file:rounded-xl file:border-0 file:font-semibold file:bg-brand-cyan file:text-dark-900 cursor-pointer">
                 </div>
                 <div>
-                    <label class="block font-medium text-gray-300 mb-1">Thumbnail Image</label>
-                    <input type="file" id="thumbnailFile" accept="image/*" required class="w-full bg-dark-900 border border-dark-600 rounded-2xl p-2.5 text-gray-300 file:mr-3 file:py-1 file:px-3 file:rounded-xl file:border-0 file:font-semibold file:bg-dark-700 file:text-white cursor-pointer">
+                    <label class="block font-medium text-gray-300 mb-1">Thumbnail Image <span class="text-[10px] text-gray-400">(Optional)</span></label>
+                    <input type="file" id="thumbnailFile" accept="image/*" class="w-full bg-dark-900 border border-dark-600 rounded-2xl p-2.5 text-gray-300 file:mr-3 file:py-1 file:px-3 file:rounded-xl file:border-0 file:font-semibold file:bg-dark-700 file:text-white cursor-pointer">
                 </div>
                 <div>
                     <label class="block font-medium text-gray-300 mb-1">Video Title</label>
@@ -192,13 +192,20 @@
                     <label class="block font-medium text-gray-300 mb-1">Description & Tags</label>
                     <textarea id="videoDesc" rows="2" placeholder="Description..." class="w-full bg-dark-900 border border-dark-600 rounded-2xl p-3 text-white focus:border-brand-cyan outline-none"></textarea>
                 </div>
-                <button type="submit" id="uploadSubmitBtn" class="w-full bg-brand-cyan text-dark-900 font-bold py-3 rounded-2xl hover:bg-cyan-400 transition shadow-lg cursor-pointer">Start Secure Upload & Scan</button>
+                <button type="submit" id="uploadSubmitBtn" class="w-full bg-brand-cyan text-dark-900 font-bold py-3 rounded-2xl hover:bg-cyan-400 transition shadow-lg cursor-pointer">Start Secure Upload</button>
             </form>
         </section>
 
-        <!-- FRIENDS & SUBSCRIPTIONS -->
-        <section id="page-friends" class="page-view hidden max-w-2xl mx-auto space-y-3">
-            <h2 class="text-sm font-bold text-white flex items-center"><i class="fa-solid fa-user-group text-pink-400 mr-2"></i> Friends & Subscribed Creators</h2>
+        <!-- FRIENDS & SUBSCRIPTIONS (উন্নত সার্চ ইঞ্জিনসহ) -->
+        <section id="page-friends" class="page-view hidden max-w-2xl mx-auto space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-sm font-bold text-white flex items-center"><i class="fa-solid fa-user-group text-pink-400 mr-2"></i> Friends & Subscribed Creators</h2>
+            </div>
+            <!-- ফ্রেন্ডস বা সাবস্ক্রাইবার খোঁজার জন্য সার্চ বক্স -->
+            <div class="bg-dark-800 border border-dark-700 rounded-2xl px-4 py-2 flex items-center space-x-2">
+                <i class="fa-solid fa-magnifying-glass text-gray-400 text-xs"></i>
+                <input type="text" id="friendSearchInput" placeholder="Search friends or creators by name..." class="w-full bg-transparent outline-none text-xs text-white placeholder-gray-500">
+            </div>
             <div id="friendsListContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
         </section>
 
@@ -284,7 +291,7 @@
             </div>
         </section>
 
-        <!-- USER PROFILE PAGE (Professional YouTube Style with Edit Button) -->
+        <!-- USER PROFILE PAGE -->
         <section id="page-profile" class="page-view hidden max-w-2xl mx-auto space-y-4">
             <div class="bg-dark-800 border border-dark-700 rounded-3xl p-6 shadow-2xl space-y-4">
                 <div class="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-5">
@@ -304,7 +311,6 @@
                             <span id="profileStrikeCount" class="text-red-400">0 Strikes</span>
                         </div>
                     </div>
-                    <!-- Edit Profile Modal Trigger Button -->
                     <button id="openEditModalBtn" class="bg-brand-cyan/10 border border-brand-cyan/30 text-brand-cyan font-bold px-4 py-2 rounded-2xl hover:bg-brand-cyan/20 transition cursor-pointer text-xs flex items-center space-x-1.5 shadow">
                         <i class="fa-solid fa-pen-to-square"></i> <span>Edit Profile</span>
                     </button>
@@ -374,8 +380,8 @@
 
     </main>
 
-    <!-- EDIT PROFILE MODAL (পপ-আপ এডিট বক্স) -->
-    <div id="editProfileModal" class="fixed inset-0 bg-black/9팅 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <!-- EDIT PROFILE MODAL -->
+    <div id="editProfileModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
         <div class="bg-dark-800 border border-dark-700 rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl relative">
             <div class="flex justify-between items-center border-b border-dark-700 pb-3">
                 <h3 class="font-bold text-white text-sm flex items-center"><i class="fa-solid fa-user-pen text-brand-cyan mr-2"></i> Edit Channel Profile</h3>
@@ -485,4 +491,4 @@
     </script>
     <script type="module" src="app.js"></script>
 </body>
-</html>
+        </html>
