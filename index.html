@@ -196,12 +196,11 @@
             </form>
         </section>
 
-        <!-- FRIENDS & SUBSCRIPTIONS (উন্নত সার্চ ইঞ্জিনসহ) -->
+        <!-- FRIENDS & SUBSCRIPTIONS -->
         <section id="page-friends" class="page-view hidden max-w-2xl mx-auto space-y-4">
             <div class="flex items-center justify-between">
                 <h2 class="text-sm font-bold text-white flex items-center"><i class="fa-solid fa-user-group text-pink-400 mr-2"></i> Friends & Subscribed Creators</h2>
             </div>
-            <!-- ফ্রেন্ডস বা সাবস্ক্রাইবার খোঁজার জন্য সার্চ বক্স -->
             <div class="bg-dark-800 border border-dark-700 rounded-2xl px-4 py-2 flex items-center space-x-2">
                 <i class="fa-solid fa-magnifying-glass text-gray-400 text-xs"></i>
                 <input type="text" id="friendSearchInput" placeholder="Search friends or creators by name..." class="w-full bg-transparent outline-none text-xs text-white placeholder-gray-500">
@@ -317,9 +316,30 @@
                 </div>
             </div>
 
-            <div class="bg-dark-800 border border-dark-700 rounded-3xl p-5">
-                <h3 class="font-bold text-white text-xs mb-3">My Uploaded Videos</h3>
+            <!-- My Uploaded Videos with Edit & Delete Options -->
+            <div class="bg-dark-800 border border-dark-700 rounded-3xl p-5 space-y-3">
+                <h3 class="font-bold text-white text-xs mb-3">My Uploaded Videos (Manage)</h3>
                 <div id="myUploadedVideosGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+            </div>
+        </section>
+
+        <!-- EXTERNAL CREATOR PUBLIC PROFILE VIEW (অন্যান্য ইউজারের প্রোফাইল দেখার পেজ) -->
+        <section id="page-external-profile" class="page-view hidden max-w-2xl mx-auto space-y-4">
+            <div class="bg-dark-800 border border-dark-700 rounded-3xl p-6 shadow-2xl space-y-4">
+                <div class="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-5">
+                    <img id="extProfileAvatar" src="" alt="Avatar" class="w-20 h-20 rounded-full object-cover border-2 border-brand-cyan shadow-md">
+                    <div class="flex-1 text-center sm:text-left space-y-1">
+                        <h2 id="extProfileName" class="text-sm font-bold text-white">Creator Name</h2>
+                        <p id="extProfileEmail" class="text-[11px] text-gray-400">email@zynqra.com</p>
+                        <p id="extProfileBio" class="text-[11px] text-gray-300 italic">Bio...</p>
+                        <span id="extProfileSubs" class="text-[10px] text-brand-cyan font-bold">0 Subs</span>
+                    </div>
+                    <button id="extMessageBtn" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-2xl text-xs font-semibold shadow cursor-pointer"><i class="fa-solid fa-message mr-1"></i> Message</button>
+                </div>
+            </div>
+            <div class="bg-dark-800 border border-dark-700 rounded-3xl p-5">
+                <h3 class="font-bold text-white text-xs mb-3">Creator's Videos</h3>
+                <div id="extUserVideosGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
             </div>
         </section>
 
@@ -406,6 +426,18 @@
         </div>
     </div>
 
+    <!-- EDIT VIDEO TITLE MODAL (ভিডিও টাইটেল এডিট করার পপ-আপ) -->
+    <div id="editVideoModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-dark-800 border border-dark-700 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl relative">
+            <div class="flex justify-between items-center border-b border-dark-700 pb-3">
+                <h3 class="font-bold text-white text-sm">Edit Video Title</h3>
+                <button id="closeEditVideoModal" class="text-gray-400 hover:text-white p-1"><i class="fa-solid fa-xmark text-base"></i></button>
+            </div>
+            <input type="text" id="editVideoTitleInput" placeholder="New video title..." class="w-full bg-dark-900 border border-dark-600 rounded-2xl p-3 text-white outline-none text-xs">
+            <button id="saveVideoTitleBtn" class="w-full bg-brand-cyan text-dark-900 font-bold py-2.5 rounded-2xl hover:bg-cyan-400 transition text-xs cursor-pointer">Update Title</button>
+        </div>
+    </div>
+
     <!-- YouTube-Style Watch Modal -->
     <div id="videoModal" class="fixed inset-0 bg-black/95 backdrop-blur-md z-50 hidden flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
         <div class="flex-1 flex flex-col lg:overflow-y-auto p-3 sm:p-6 space-y-4">
@@ -432,7 +464,7 @@
                 <h3 id="modalVideoTitle" class="font-bold text-white text-sm sm:text-base">Video Title</h3>
                 
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-dark-700 pb-3">
-                    <div class="flex items-center space-x-3">
+                    <div class="flex items-center space-x-3 cursor-pointer" id="modalCreatorProfileClick">
                         <img id="modalCreatorAvatar" src="" class="w-10 h-10 rounded-full object-cover border border-dark-600">
                         <div>
                             <div class="flex items-center space-x-1.5">
@@ -491,4 +523,4 @@
     </script>
     <script type="module" src="app.js"></script>
 </body>
-        </html>
+                                                                               </html>
