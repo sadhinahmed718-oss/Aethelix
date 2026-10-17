@@ -20,8 +20,9 @@ let currentUser = { name: 'Guest User', email: 'guest@zynqra.com', avatar: 'http
 let activeVideo = null;
 let activeChatContact = null;
 let globalAllVideos = [];
-let globalAllUsers = []; // গ্লোবাল ইউজার লিস্ট সার্চ ইঞ্জিনের জন্য
-let unsubscribeChat = null; // রিয়েল-টাইম চ্যাট লিসেনার ম্যানেজ করার জন্য
+let globalAllUsers = [];
+let unsubscribeChat = null;
+let editingVideoId = null; // ভিডিও টাইটেল এডিট করার জন্য আইডি
 
 // --- Advanced XSS Protection Utility ---
 function sanitizeHTML(str) {
@@ -43,9 +44,10 @@ document.addEventListener('DOMContentLoaded', () => {
     loadFriendsList();
     loadMessengerContacts();
     setupSearchEngine();
-    setupFriendSearchEngine(); // ফ্রেন্ডস সার্চ ইঞ্জিন ইনিশিয়ালাইজেশন
+    setupFriendSearchEngine();
     setupOfflineDownloadsUI();
     setupProfileEditModal();
+    setupVideoEditModal();
     setupEventListeners();
     loadNotifications();
 });
@@ -303,7 +305,7 @@ function setupSearchEngine() {
     });
 }
 
-// --- FRIEND & SUBSCRIBER SEARCH ENGINE (নতুন যুক্ত করা হয়েছে) ---
+// --- FRIEND & SUBSCRIBER SEARCH ENGINE ---
 function setupFriendSearchEngine() {
     const friendSearchInput = document.getElementById('friendSearchInput');
     if (!friendSearchInput) return;
@@ -328,16 +330,18 @@ function setupFriendSearchEngine() {
             const card = document.createElement('div');
             card.className = 'bg-dark-800 border border-dark-700 p-3.5 rounded-2xl flex items-center justify-between shadow';
             card.innerHTML = `
-                <div class="flex items-center space-x-3">
-                    <img src="${sanitizeHTML(user.avatar)}" class="w-10 h-10 rounded-full object-cover border border-brand-cyan">
+                <div class="flex items-center space-x-3 cursor-pointer group" onclick="openExternalProfile('${sanitizeHTML(user.email)}')">
+                    <img src="${sanitizeHTML(user.avatar)}" class="w-10 h-10 rounded-full object-cover border border-brand-cyan group-hover:scale-105 transition">
                     <div>
-                        <h4 class="font-bold text-white text-xs">${sanitizeHTML(user.name)}</h4>
+                        <h4 class="font-bold text-white text-xs group-hover:text-brand-cyan transition">${sanitizeHTML(user.name)}</h4>
                         <p class="text-[10px] text-gray-400">${user.subs || 0} subscribers</p>
                     </div>
                 </div>
-                <button onclick="openChatWithUser('${sanitizeHTML(user.email)}')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center space-x-1.5 shadow">
-                    <i class="fa-solid fa-message"></i> <span>Message</span>
-                </button>
+                <div class="flex items-center space-x-2">
+                    <button onclick="openChatWithUser('${sanitizeHTML(user.email)}')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center space-x-1 shadow">
+                        <i class="fa-solid fa-message"></i> <span>Message</span>
+                    </button>
+                </div>
             `;
             container.appendChild(card);
         });
@@ -417,7 +421,7 @@ function loadHomeShortsCarousel(videos) {
     });
 }
 
-// --- SHORTS PLAYER ---
+// --- SHORTS PLAYER (YouTube, Facebook, TikTok স্টাইল লাইক, কমেন্ট ও শেয়ার বাটনযুক্ত) ---
 function loadShortsFeed() {
     db.collection("videos").where("aspectRatio", "==", "9:16").onSnapshot((snapshot) => {
         const container = document.getElementById('shortsPlayerContainer');
@@ -441,7 +445,7 @@ function loadShortsFeed() {
                         <span class="bg-amber-400 text-dark-900 font-bold text-[9px] px-2.5 py-0.5 rounded-full">Zynqra Short</span>
                     </div>
                     <div class="space-y-2 pointer-events-auto">
-                        <div class="flex items-center space-x-2">
+                        <div class="flex items-center space-x-2 cursor-pointer" onclick="openExternalProfile('${sanitizeHTML(short.creatorEmail)}')">
                             <img src="${sanitizeHTML(short.creatorAvatar)}" class="w-8 h-8 rounded-full border border-white">
                             <span class="font-bold text-white text-xs">${sanitizeHTML(short.creatorName)}</span>
                         </div>
@@ -449,7 +453,9 @@ function loadShortsFeed() {
                     </div>
                 </div>
                 <div class="absolute right-3 bottom-16 flex flex-col items-center space-y-4 pointer-events-auto">
-                    <button onclick="likeShort('${short.id}', ${short.likes || 0})" class="bg-dark-800/80 hover:bg-dark-700 text-white w-10 h-10 rounded-full flex flex-col items-center justify-center shadow"><i class="fa-solid fa-heart text-brand-red"></i><span class="text-[8px]">${short.likes || 0}</span></button>
+                    <button onclick="likeShort('${short.id}', ${short.likes || 0})" class="bg-dark-800/80 hover:bg-dark-700 text-white w-10 h-10 rounded-full flex flex-col items-center justify-center shadow cursor-pointer"><i class="fa-solid fa-heart text-brand-red"></i><span class="text-[8px]">${short.likes || 0}</span></button>
+                    <button onclick="openVideoModal(${JSON.stringify(short).replace(/"/g, '&quot;')})" class="bg-dark-800/80 hover:bg-dark-700 text-white w-10 h-10 rounded-full flex flex-col items-center justify-center shadow cursor-pointer"><i class="fa-solid fa-comment text-brand-cyan"></i><span class="text-[8px]">${(short.comments || []).length}</span></button>
+                    <button onclick="navigator.clipboard.writeText(window.location.href); alert('Short link copied to clipboard!');" class="bg-dark-800/80 hover:bg-dark-700 text-white w-10 h-10 rounded-full flex flex-col items-center justify-center shadow cursor-pointer"><i class="fa-solid fa-share text-emerald-400"></i><span class="text-[8px]">Share</span></button>
                 </div>
             `;
             const videoEl = slide.querySelector('video');
@@ -477,7 +483,50 @@ function likeShort(id, currentLikes) {
     });
 }
 
-// --- VIDEO MODAL, SECURE LIKES, SUBSCRIPTIONS & ANTI-BOT VIEWS ---
+// --- EXTERNAL PUBLIC PROFILE VIEW ---
+function openExternalProfile(email) {
+    db.collection("users").doc(email).get().then((doc) => {
+        if (!doc.exists) {
+            alert('User profile not found.');
+            return;
+        }
+        const user = doc.data();
+        switchPage('external-profile');
+
+        document.getElementById('extProfileAvatar').src = user.avatar;
+        document.getElementById('extProfileName').innerText = user.name;
+        document.getElementById('extProfileEmail').innerText = user.email;
+        document.getElementById('extProfileBio').innerText = user.bio || 'No bio added.';
+        document.getElementById('extProfileSubs').innerText = `${user.subs || 0} Subscribers`;
+        document.getElementById('extMessageBtn').onclick = () => openChatWithUser(user.email);
+
+        db.collection("videos").where("creatorEmail", "==", user.email).get().then((vSnapshot) => {
+            const vGrid = document.getElementById('extUserVideosGrid');
+            if (!vGrid) return;
+            vGrid.innerHTML = '';
+            if (vSnapshot.empty) {
+                vGrid.innerHTML = `<p class="text-gray-500 text-xs col-span-full">No videos uploaded by this creator.</p>`;
+                return;
+            }
+            vSnapshot.forEach(vDoc => {
+                const v = vDoc.data();
+                const card = document.createElement('div');
+                card.className = 'bg-dark-900 border border-dark-700 rounded-2xl overflow-hidden p-2.5 flex space-x-2.5 cursor-pointer';
+                card.innerHTML = `
+                    <img src="${sanitizeHTML(v.thumbnailUrl || v.creatorAvatar)}" class="w-20 h-12 rounded-xl object-cover">
+                    <div class="flex-1 truncate">
+                        <h4 class="font-bold text-white text-[11px] truncate">${sanitizeHTML(v.title)}</h4>
+                        <div class="text-[9px] text-gray-400 mt-1">${v.views || 0} views</div>
+                    </div>
+                `;
+                card.onclick = () => openVideoModal({ id: vDoc.id, ...v });
+                vGrid.appendChild(card);
+            });
+        });
+    });
+}
+
+// --- VIDEO MODAL, LIKES, SUBSCRIPTIONS ---
 function openVideoModal(video) {
     activeVideo = video;
     const modal = document.getElementById('videoModal');
@@ -489,6 +538,15 @@ function openVideoModal(video) {
     document.getElementById('modalCreatorAvatar').src = video.creatorAvatar;
     document.getElementById('modalLikeCount').innerText = video.likes || 0;
     document.getElementById('modalCreatorSubs').innerText = `100 subscribers`;
+
+    const creatorClick = document.getElementById('modalCreatorProfileClick');
+    if (creatorClick) {
+        creatorClick.onclick = () => {
+            modal.classList.add('hidden');
+            player.pause();
+            openExternalProfile(video.creatorEmail);
+        };
+    }
 
     player.src = video.videoUrl;
     renderComments(video);
@@ -618,7 +676,7 @@ function renderRelatedVideos(currentVideo) {
     });
 }
 
-// --- CHAT & MESSENGER (সংশোধিত: উভয় পক্ষের রিয়েল-টাইম চ্যাট সিঙ্ক ঠিক করা হয়েছে) ---
+// --- CHAT & MESSENGER (প্রেরক ও প্রাপকের জন্য ডান-বাম আলাদা রঙ) ---
 function loadFriendsList() {
     db.collection("users").get().then((snapshot) => {
         const container = document.getElementById('friendsListContainer');
@@ -633,10 +691,10 @@ function loadFriendsList() {
             const card = document.createElement('div');
             card.className = 'bg-dark-800 border border-dark-700 p-3.5 rounded-2xl flex items-center justify-between shadow';
             card.innerHTML = `
-                <div class="flex items-center space-x-3">
-                    <img src="${sanitizeHTML(user.avatar)}" class="w-10 h-10 rounded-full object-cover border border-brand-cyan">
+                <div class="flex items-center space-x-3 cursor-pointer group" onclick="openExternalProfile('${sanitizeHTML(user.email)}')">
+                    <img src="${sanitizeHTML(user.avatar)}" class="w-10 h-10 rounded-full object-cover border border-brand-cyan group-hover:scale-105 transition">
                     <div>
-                        <h4 class="font-bold text-white text-xs">${sanitizeHTML(user.name)}</h4>
+                        <h4 class="font-bold text-white text-xs group-hover:text-brand-cyan transition">${sanitizeHTML(user.name)}</h4>
                         <p class="text-[10px] text-gray-400">${user.subs || 0} subscribers</p>
                     </div>
                 </div>
@@ -681,10 +739,10 @@ function selectActiveChatContact(user) {
     activeChatContact = user;
     const header = document.getElementById('activeChatHeader');
     header.innerHTML = `
-        <div class="flex items-center space-x-2.5">
+        <div class="flex items-center space-x-2.5 cursor-pointer" onclick="openExternalProfile('${sanitizeHTML(user.email)}')">
             <img src="${sanitizeHTML(user.avatar)}" class="w-8 h-8 rounded-full object-cover">
             <div>
-                <span class="font-bold text-white block text-xs">${sanitizeHTML(user.name)}</span>
+                <span class="font-bold text-white block text-xs hover:text-brand-cyan transition">${sanitizeHTML(user.name)}</span>
                 <span class="text-[9px] text-emerald-400">online</span>
             </div>
         </div>
@@ -713,6 +771,7 @@ function renderChatMessages() {
             const msg = doc.data();
             const isMe = msg.sender === currentUser.email;
             const msgDiv = document.createElement('div');
+            // প্রেরক ও প্রাপক অনুযায়ী ডান ও বাম পাশ এবং ভিন্ন রঙ (WhatsApp স্টাইল: নিজেরটা সবুজ, অন্যেরটা ডার্ক গ্রে)
             msgDiv.className = `flex ${isMe ? 'justify-end' : 'justify-start'} my-1`;
             msgDiv.innerHTML = `
                 <div class="max-w-[75%] px-3.5 py-2 rounded-2xl text-xs shadow ${isMe ? 'bg-[#005c4b] text-white rounded-tr-none' : 'bg-[#202c33] text-gray-100 rounded-tl-none'}">
@@ -744,7 +803,7 @@ function loadNotifications() {
     };
 }
 
-// --- PROFILE EDIT MODAL & 2 MONTHS NAME CHANGE RESTRICTION ---
+// --- PROFILE EDIT MODAL ---
 function setupProfileEditModal() {
     const openBtn = document.getElementById('openEditModalBtn');
     const modal = document.getElementById('editProfileModal');
@@ -838,7 +897,51 @@ function setupProfileEditModal() {
     }
 }
 
-// --- EVENT LISTENERS & CLOUDINARY UPLOAD INTEGRATION ---
+// --- VIDEO EDIT & DELETE MANAGEMENT (ভিডিও এডিট ও ডিলিট সিস্টেম) ---
+function setupVideoEditModal() {
+    const modal = document.getElementById('editVideoModal');
+    const closeBtn = document.getElementById('closeEditVideoModal');
+    const saveBtn = document.getElementById('saveVideoTitleBtn');
+
+    if (closeBtn && modal) {
+        closeBtn.onclick = () => modal.classList.add('hidden');
+    }
+
+    if (saveBtn) {
+        saveBtn.onclick = async () => {
+            const newTitle = sanitizeHTML(document.getElementById('editVideoTitleInput').value.trim());
+            if (!newTitle || !editingVideoId) {
+                alert('Please enter a valid title.');
+                return;
+            }
+
+            await db.collection("videos").doc(editingVideoId).update({ title: newTitle });
+            alert('Video title updated successfully!');
+            modal.classList.add('hidden');
+            loadUserProfile();
+        };
+    }
+}
+
+window.openEditVideoModal = function(id, currentTitle) {
+    editingVideoId = id;
+    const input = document.getElementById('editVideoTitleInput');
+    const modal = document.getElementById('editVideoModal');
+    if (input && modal) {
+        input.value = currentTitle;
+        modal.classList.remove('hidden');
+    }
+};
+
+window.deleteUserVideo = async function(id) {
+    if (confirm('Are you sure you want to delete this video?')) {
+        await db.collection("videos").doc(id).delete();
+        alert('Video deleted successfully!');
+        loadUserProfile();
+    }
+};
+
+// --- EVENT LISTENERS & CLOUDINARY UPLOAD ---
 function setupEventListeners() {
     const uploadForm = document.getElementById('uploadForm');
     if (uploadForm) {
@@ -1094,14 +1197,20 @@ function loadUserProfile() {
         snapshot.forEach(doc => {
             const v = doc.data();
             myGrid.innerHTML += `
-                <div class="bg-dark-900 border border-dark-700 rounded-2xl overflow-hidden p-2.5 flex space-x-2.5">
-                    <img src="${sanitizeHTML(v.thumbnailUrl || v.creatorAvatar)}" class="w-20 h-12 rounded-xl object-cover">
-                    <div class="flex-1 truncate">
-                        <h4 class="font-bold text-white text-[11px] truncate">${sanitizeHTML(v.title)}</h4>
-                        <div class="text-[9px] text-gray-400 mt-1">${v.views || 0} views • ${v.likes || 0} likes</div>
+                <div class="bg-dark-900 border border-dark-700 rounded-2xl overflow-hidden p-3 flex items-center justify-between">
+                    <div class="flex items-center space-x-2.5 truncate">
+                        <img src="${sanitizeHTML(v.thumbnailUrl || v.creatorAvatar)}" class="w-16 h-10 rounded-xl object-cover">
+                        <div class="truncate">
+                            <h4 class="font-bold text-white text-[11px] truncate">${sanitizeHTML(v.title)}</h4>
+                            <div class="text-[9px] text-gray-400 mt-0.5">${v.views || 0} views • ${v.likes || 0} likes</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2 shrink-0">
+                        <button onclick="openEditVideoModal('${doc.id}', '${sanitizeHTML(v.title)}')" class="bg-brand-cyan/20 text-brand-cyan px-2.5 py-1 rounded-xl text-[10px] font-semibold cursor-pointer hover:bg-brand-cyan/30">Edit</button>
+                        <button onclick="deleteUserVideo('${doc.id}')" class="bg-red-500/20 text-red-400 px-2.5 py-1 rounded-xl text-[10px] font-semibold cursor-pointer hover:bg-red-500/30">Delete</button>
                     </div>
                 </div>
             `;
         });
     });
-}
+    }
