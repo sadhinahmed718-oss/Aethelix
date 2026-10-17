@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="bn" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zynqra - Secured Master Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- ফায়ারবেস (Firebase) সিডিএন স্ক্রিপ্ট -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <style>body { font-family: 'Inter', sans-serif; background-color: #0b0b0b; color: #f1f1f1; }</style>
+</head>
+<body class="bg-[#0b0b0b] text-gray-100 min-h-screen text-xs">
+
+    <!-- Admin Authentication Guard Modal -->
+    <div id="adminAuthGuard" class="fixed inset-0 bg-[#090909] z-50 flex flex-col items-center justify-center p-4">
+        <div class="bg-[#121212] border border-red-600/30 p-6 rounded-3xl max-w-xs w-full text-center space-y-4 shadow-2xl">
+            <div class="w-12 h-12 bg-red-950/50 text-red-500 rounded-full flex items-center justify-center mx-auto text-base border border-red-600/50">
+                <i class="fa-solid fa-user-shield"></i>
+            </div>
+            <h2 class="text-xs font-bold text-white">Master Admin Portal</h2>
+            <p id="adminGuardStatus" class="text-[11px] text-gray-400">Enter secure master key to unlock.</p>
+            <input type="password" id="adminSecretKeyInput" placeholder="Master Key (zynqra_admin_2026)" class="w-full bg-[#181818] border border-[#333] rounded-2xl px-3.5 py-2.5 text-white outline-none focus:border-red-500 text-xs text-center">
+            <button id="adminLoginVerifyBtn" class="w-full bg-red-600 text-white py-2.5 rounded-2xl font-bold hover:bg-red-500 transition text-xs cursor-pointer">Verify & Unlock</button>
+            <a href="index.html" class="block text-[10px] text-gray-500 hover:underline pt-1">Return to Zynqra App</a>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard Main Container -->
+    <div id="adminDashboard" class="hidden min-h-screen flex flex-col">
+        <header class="bg-[#121212] border-b border-[#222222] px-6 py-3.5 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <span class="bg-red-600 text-white px-2.5 py-0.5 rounded font-black text-[9px]">MASTER ADMIN</span>
+                <h1 class="font-bold text-white text-xs">Zynqra Command Center</h1>
+            </div>
+            <a href="index.html" class="bg-[#1f1f1f] hover:bg-[#272727] px-4 py-1.5 rounded-xl font-semibold text-gray-300 transition">Back to App</a>
+        </header>
+
+        <main class="flex-1 p-6 max-w-7xl mx-auto w-full space-y-5">
+            <!-- Stats Overview Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-[#121212] border border-[#222222] p-4.5 rounded-2xl shadow-lg">
+                    <div class="text-[11px] text-gray-400 mb-1">Total Users</div>
+                    <div id="adminTotalUsers" class="text-xl font-bold text-white">0</div>
+                </div>
+                <div class="bg-[#121212] border border-[#222222] p-4.5 rounded-2xl shadow-lg">
+                    <div class="text-[11px] text-gray-400 mb-1">Total Videos</div>
+                    <div id="adminTotalVideos" class="text-xl font-bold text-white">0</div>
+                </div>
+                <div class="bg-[#121212] border border-[#222222] p-4.5 rounded-2xl shadow-lg">
+                    <div class="text-[11px] text-gray-400 mb-1">AI / Flagged Queue</div>
+                    <div id="adminPendingVideos" class="text-xl font-bold text-amber-500">0</div>
+                </div>
+            </div>
+
+            <!-- Monetization & Monthly Payout / Views Management Hub -->
+            <div class="bg-[#121212] border border-[#222222] rounded-2xl p-4.5 space-y-3 shadow-lg">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#222] pb-3">
+                    <h2 class="font-bold text-white text-xs flex items-center"><i class="fa-solid fa-sack-dollar text-yellow-400 mr-2"></i> Monthly Views & Payout Management</h2>
+                    <div class="flex items-center space-x-2 bg-[#181818] px-3 py-1.5 rounded-xl border border-[#333]">
+                        <span class="text-gray-400 text-[10px]">Global CPM Rate (Per 1K Views):</span>
+                        <input type="number" id="globalCpmInput" value="10" class="w-12 bg-[#222] text-white text-center rounded px-1 py-0.5 text-xs outline-none font-bold">
+                        <span class="text-yellow-400 text-[10px]">BDT / USD</span>
+                    </div>
+                </div>
+                <div id="adminMonetizationRequestsList" class="space-y-2">
+                    <p class="text-[11px] text-gray-500">No active monetization users found.</p>
+                </div>
+            </div>
+
+            <!-- AI Video Moderation & Copyright Check Queue -->
+            <div class="bg-[#121212] border border-[#222222] rounded-2xl p-4.5 space-y-3 shadow-lg">
+                <h2 class="font-bold text-white text-xs flex items-center"><i class="fa-solid fa-shield-halved text-brand-cyan mr-2"></i> AI Video Moderation & Copyright Check Queue</h2>
+                <div id="adminModerationQueueList" class="space-y-2">
+                    <p class="text-[11px] text-gray-500">All uploaded videos are verified.</p>
+                </div>
+            </div>
+
+            <!-- User Management, Strikes & Ban Control Table -->
+            <div class="bg-[#121212] border border-[#222222] rounded-2xl p-4.5 space-y-3 shadow-lg">
+                <h2 class="font-bold text-white text-xs flex items-center"><i class="fa-solid fa-users-gear text-red-400 mr-2"></i> User Management, Strikes & Ban Control</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-gray-300 text-[11px]">
+                        <thead class="bg-[#181818] text-gray-400 uppercase text-[9px]">
+                            <tr>
+                                <th class="p-3">User</th>
+                                <th class="p-3">Email / Payout Info</th>
+                                <th class="p-3">Strikes / Status</th>
+                                <th class="p-3">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminUsersTableBody" class="divide-y divide-[#222222]"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Admin JavaScript Logic -->
+    <script type="module" src="admin.js"></script>
+</body>
+</html>
