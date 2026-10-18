@@ -1299,4 +1299,4 @@ function loadUserProfile() {
             `;
         });
     });
-    }
+}
