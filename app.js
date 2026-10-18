@@ -22,7 +22,7 @@ let activeChatContact = null;
 let globalAllVideos = [];
 let globalAllUsers = [];
 let unsubscribeChat = null;
-let editingVideoId = null; // ভিডিও টাইটেল এডিট করার জন্য আইডি
+let editingVideoId = null;
 
 // --- Advanced XSS Protection Utility ---
 function sanitizeHTML(str) {
@@ -305,7 +305,7 @@ function setupSearchEngine() {
     });
 }
 
-// --- FRIEND & SUBSCRIBER SEARCH ENGINE ---
+// --- FRIEND & SUBSCRIBER SEARCH ENGINE (Subscribe & Message Action) ---
 function setupFriendSearchEngine() {
     const friendSearchInput = document.getElementById('friendSearchInput');
     if (!friendSearchInput) return;
@@ -327,6 +327,7 @@ function setupFriendSearchEngine() {
         }
 
         filteredUsers.forEach(user => {
+            const isSubbed = localStorage.getItem(`subscribed_${currentUser.email}_${user.email}`);
             const card = document.createElement('div');
             card.className = 'bg-dark-800 border border-dark-700 p-3.5 rounded-2xl flex items-center justify-between shadow';
             card.innerHTML = `
@@ -338,7 +339,10 @@ function setupFriendSearchEngine() {
                     </div>
                 </div>
                 <div class="flex items-center space-x-2">
-                    <button onclick="openChatWithUser('${sanitizeHTML(user.email)}')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center space-x-1 shadow">
+                    <button onclick="toggleSubscribeUser('${sanitizeHTML(user.email)}', this)" class="${isSubbed ? 'bg-dark-700 text-gray-300' : 'bg-white text-dark-900'} px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shadow">
+                        ${isSubbed ? 'Subscribed ✓' : 'Subscribe'}
+                    </button>
+                    <button onclick="openChatWithUser('${sanitizeHTML(user.email)}')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center space-x-1.5 shadow">
                         <i class="fa-solid fa-message"></i> <span>Message</span>
                     </button>
                 </div>
@@ -347,6 +351,25 @@ function setupFriendSearchEngine() {
         });
     });
 }
+
+window.toggleSubscribeUser = function(creatorEmail, btnElement) {
+    if (!currentUser || currentUser.email === 'guest@zynqra.com') {
+        alert('Please login to subscribe!');
+        return;
+    }
+    const subKey = `subscribed_${currentUser.email}_${creatorEmail}`;
+    if (localStorage.getItem(subKey)) {
+        localStorage.removeItem(subKey);
+        btnElement.innerText = 'Subscribe';
+        btnElement.className = 'bg-white text-dark-900 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shadow';
+        alert('Unsubscribed successfully.');
+    } else {
+        localStorage.setItem(subKey, 'true');
+        btnElement.innerText = 'Subscribed ✓';
+        btnElement.className = 'bg-dark-700 text-gray-300 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shadow';
+        alert('Successfully subscribed!');
+    }
+};
 
 // --- OFFLINE DOWNLOAD SYSTEM ---
 function setupOfflineDownloadsUI() {
@@ -421,7 +444,7 @@ function loadHomeShortsCarousel(videos) {
     });
 }
 
-// --- SHORTS PLAYER (YouTube, Facebook, TikTok স্টাইল লাইক, কমেন্ট ও শেয়ার বাটনযুক্ত) ---
+// --- SHORTS PLAYER (Professional, Large Buttons, Fully Working Likes, Comments & Share) ---
 function loadShortsFeed() {
     db.collection("videos").where("aspectRatio", "==", "9:16").onSnapshot((snapshot) => {
         const container = document.getElementById('shortsPlayerContainer');
@@ -442,20 +465,20 @@ function loadShortsFeed() {
                 <video src="${sanitizeHTML(short.videoUrl)}" loop class="w-full h-full object-cover"></video>
                 <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/20 p-4 flex flex-col justify-between pointer-events-none">
                     <div class="flex justify-between items-center pointer-events-auto">
-                        <span class="bg-amber-400 text-dark-900 font-bold text-[9px] px-2.5 py-0.5 rounded-full">Zynqra Short</span>
+                        <span class="bg-amber-400 text-dark-900 font-bold text-[10px] px-3 py-1 rounded-full shadow-lg">Zynqra Short</span>
                     </div>
-                    <div class="space-y-2 pointer-events-auto">
-                        <div class="flex items-center space-x-2 cursor-pointer" onclick="openExternalProfile('${sanitizeHTML(short.creatorEmail)}')">
-                            <img src="${sanitizeHTML(short.creatorAvatar)}" class="w-8 h-8 rounded-full border border-white">
-                            <span class="font-bold text-white text-xs">${sanitizeHTML(short.creatorName)}</span>
+                    <div class="space-y-2.5 pointer-events-auto pb-4">
+                        <div class="flex items-center space-x-2.5 cursor-pointer" onclick="openExternalProfile('${sanitizeHTML(short.creatorEmail)}')">
+                            <img src="${sanitizeHTML(short.creatorAvatar)}" class="w-10 h-10 rounded-full border-2 border-brand-cyan shadow">
+                            <span class="font-bold text-white text-sm">${sanitizeHTML(short.creatorName)}</span>
                         </div>
-                        <p class="text-[11px] text-gray-200 line-clamp-2">${sanitizeHTML(short.title)}</p>
+                        <p class="text-xs text-gray-100 line-clamp-2">${sanitizeHTML(short.title)}</p>
                     </div>
                 </div>
-                <div class="absolute right-3 bottom-16 flex flex-col items-center space-y-4 pointer-events-auto">
-                    <button onclick="likeShort('${short.id}', ${short.likes || 0})" class="bg-dark-800/80 hover:bg-dark-700 text-white w-10 h-10 rounded-full flex flex-col items-center justify-center shadow cursor-pointer"><i class="fa-solid fa-heart text-brand-red"></i><span class="text-[8px]">${short.likes || 0}</span></button>
-                    <button onclick="openVideoModal(${JSON.stringify(short).replace(/"/g, '&quot;')})" class="bg-dark-800/80 hover:bg-dark-700 text-white w-10 h-10 rounded-full flex flex-col items-center justify-center shadow cursor-pointer"><i class="fa-solid fa-comment text-brand-cyan"></i><span class="text-[8px]">${(short.comments || []).length}</span></button>
-                    <button onclick="navigator.clipboard.writeText(window.location.href); alert('Short link copied to clipboard!');" class="bg-dark-800/80 hover:bg-dark-700 text-white w-10 h-10 rounded-full flex flex-col items-center justify-center shadow cursor-pointer"><i class="fa-solid fa-share text-emerald-400"></i><span class="text-[8px]">Share</span></button>
+                <div class="absolute right-3 bottom-20 flex flex-col items-center space-y-5 pointer-events-auto">
+                    <button onclick="likeShort('${short.id}', ${short.likes || 0})" class="bg-dark-800/90 hover:bg-dark-700 text-white w-12 h-12 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90"><i class="fa-solid fa-heart text-brand-red text-base"></i><span class="text-[9px] font-bold mt-0.5">${short.likes || 0}</span></button>
+                    <button onclick="openVideoModal(${JSON.stringify(short).replace(/"/g, '&quot;')})" class="bg-dark-800/90 hover:bg-dark-700 text-white w-12 h-12 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90"><i class="fa-solid fa-comment text-brand-cyan text-base"></i><span class="text-[9px] font-bold mt-0.5">${(short.comments || []).length}</span></button>
+                    <button onclick="navigator.clipboard.writeText(window.location.href); alert('Short link copied to clipboard!');" class="bg-dark-800/90 hover:bg-dark-700 text-white w-12 h-12 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90"><i class="fa-solid fa-share text-emerald-400 text-base"></i><span class="text-[9px] font-bold mt-0.5">Share</span></button>
                 </div>
             `;
             const videoEl = slide.querySelector('video');
@@ -483,7 +506,7 @@ function likeShort(id, currentLikes) {
     });
 }
 
-// --- EXTERNAL PUBLIC PROFILE VIEW ---
+// --- EXTERNAL PUBLIC PROFILE VIEW (With Subscribe & Message Buttons & Videos) ---
 function openExternalProfile(email) {
     db.collection("users").doc(email).get().then((doc) => {
         if (!doc.exists) {
@@ -498,6 +521,31 @@ function openExternalProfile(email) {
         document.getElementById('extProfileEmail').innerText = user.email;
         document.getElementById('extProfileBio').innerText = user.bio || 'No bio added.';
         document.getElementById('extProfileSubs').innerText = `${user.subs || 0} Subscribers`;
+        
+        const subBtn = document.getElementById('extSubscribeBtn');
+        const isSubbed = currentUser && localStorage.getItem(`subscribed_${currentUser.email}_${user.email}`);
+        if (subBtn) {
+            subBtn.innerText = isSubbed ? 'Subscribed ✓' : 'Subscribe';
+            subBtn.className = isSubbed ? 'bg-dark-700 text-gray-300 font-bold px-4 py-2 rounded-2xl text-xs cursor-default shadow' : 'bg-white text-dark-900 font-bold px-4 py-2 rounded-2xl text-xs hover:bg-gray-200 transition cursor-pointer shadow';
+            subBtn.onclick = () => {
+                if (!currentUser || currentUser.email === 'guest@zynqra.com') {
+                    alert('Please login to subscribe!');
+                    return;
+                }
+                if (localStorage.getItem(`subscribed_${currentUser.email}_${user.email}`)) {
+                    localStorage.removeItem(`subscribed_${currentUser.email}_${user.email}`);
+                    subBtn.innerText = 'Subscribe';
+                    subBtn.className = 'bg-white text-dark-900 font-bold px-4 py-2 rounded-2xl text-xs hover:bg-gray-200 transition cursor-pointer shadow';
+                    alert('Unsubscribed successfully.');
+                } else {
+                    localStorage.setItem(`subscribed_${currentUser.email}_${user.email}`, 'true');
+                    subBtn.innerText = 'Subscribed ✓';
+                    subBtn.className = 'bg-dark-700 text-gray-300 font-bold px-4 py-2 rounded-2xl text-xs cursor-default shadow';
+                    alert(`Successfully subscribed to ${user.name}!`);
+                }
+            };
+        }
+
         document.getElementById('extMessageBtn').onclick = () => openChatWithUser(user.email);
 
         db.collection("videos").where("creatorEmail", "==", user.email).get().then((vSnapshot) => {
@@ -526,7 +574,7 @@ function openExternalProfile(email) {
     });
 }
 
-// --- VIDEO MODAL, LIKES, SUBSCRIPTIONS ---
+// --- VIDEO MODAL, ADMIN GLOBAL ADS & ADMOB INTEGRATION ---
 function openVideoModal(video) {
     activeVideo = video;
     const modal = document.getElementById('videoModal');
@@ -553,35 +601,49 @@ function openVideoModal(video) {
     renderRelatedVideos(video);
     modal.classList.remove('hidden');
 
-    adOverlay.classList.remove('hidden');
-    let timeLeft = 5;
-    const timerText = document.getElementById('adTimerText');
-    const skipBtn = document.getElementById('skipAdBtn');
-    skipBtn.disabled = true;
-    skipBtn.className = 'bg-dark-700 text-gray-400 px-5 py-2 rounded-2xl font-semibold transition cursor-not-allowed text-[11px]';
+    // Check for Admin Global Ads / AdMob Campaign
+    db.collection("global_ads").get().then((adSnap) => {
+        if (!adSnap.empty) {
+            const adData = adSnap.docs[0].data(); // Fetch active global ad
+            adOverlay.classList.remove('hidden');
+            let timeLeft = 5;
+            const timerText = document.getElementById('adTimerText');
+            const skipBtn = document.getElementById('skipAdBtn');
+            skipBtn.disabled = true;
+            skipBtn.className = 'bg-dark-700 text-gray-400 px-5 py-2 rounded-2xl font-semibold transition cursor-not-allowed text-[11px]';
 
-    const adCountdown = setInterval(() => {
-        timeLeft--;
-        if (timeLeft > 0) {
-            timerText.innerText = `Ad playing... ${timeLeft}s`;
+            const adCountdown = setInterval(() => {
+                timeLeft--;
+                if (timeLeft > 0) {
+                    timerText.innerText = `Sponsored Ad playing... ${timeLeft}s`;
+                } else {
+                    clearInterval(adCountdown);
+                    timerText.innerText = adData.title || 'Sponsored Ad completed!';
+                    skipBtn.disabled = false;
+                    skipBtn.className = 'bg-brand-cyan text-dark-900 px-5 py-2 rounded-2xl font-bold hover:bg-cyan-400 transition cursor-pointer text-[11px]';
+                }
+            }, 1000);
+
+            skipBtn.onclick = () => {
+                adOverlay.classList.add('hidden');
+                player.play();
+                
+                const viewKey = `viewed_video_${video.id}`;
+                if (!sessionStorage.getItem(viewKey)) {
+                    sessionStorage.setItem(viewKey, 'true');
+                    incrementVideoView(video.id, video.views || 0);
+                }
+            };
         } else {
-            clearInterval(adCountdown);
-            timerText.innerText = 'Ad completed!';
-            skipBtn.disabled = false;
-            skipBtn.className = 'bg-brand-cyan text-dark-900 px-5 py-2 rounded-2xl font-bold hover:bg-cyan-400 transition cursor-pointer text-[11px]';
+            adOverlay.classList.add('hidden');
+            player.play();
+            const viewKey = `viewed_video_${video.id}`;
+            if (!sessionStorage.getItem(viewKey)) {
+                sessionStorage.setItem(viewKey, 'true');
+                incrementVideoView(video.id, video.views || 0);
+            }
         }
-    }, 1000);
-
-    skipBtn.onclick = () => {
-        adOverlay.classList.add('hidden');
-        player.play();
-        
-        const viewKey = `viewed_video_${video.id}`;
-        if (!sessionStorage.getItem(viewKey)) {
-            sessionStorage.setItem(viewKey, 'true');
-            incrementVideoView(video.id, video.views || 0);
-        }
-    };
+    });
 
     const likeBtn = document.getElementById('modalLikeBtn');
     likeBtn.onclick = () => {
@@ -676,7 +738,7 @@ function renderRelatedVideos(currentVideo) {
     });
 }
 
-// --- CHAT & MESSENGER (প্রেরক ও প্রাপকের জন্য ডান-বাম আলাদা রঙ) ---
+// --- MESSENGER CHAT (Sender: Right Side Green, Receiver: Left Side Dark) ---
 function loadFriendsList() {
     db.collection("users").get().then((snapshot) => {
         const container = document.getElementById('friendsListContainer');
@@ -688,6 +750,7 @@ function loadFriendsList() {
 
         users.forEach(user => {
             if (currentUser && user.email === currentUser.email) return;
+            const isSubbed = localStorage.getItem(`subscribed_${currentUser.email}_${user.email}`);
             const card = document.createElement('div');
             card.className = 'bg-dark-800 border border-dark-700 p-3.5 rounded-2xl flex items-center justify-between shadow';
             card.innerHTML = `
@@ -698,9 +761,14 @@ function loadFriendsList() {
                         <p class="text-[10px] text-gray-400">${user.subs || 0} subscribers</p>
                     </div>
                 </div>
-                <button onclick="openChatWithUser('${sanitizeHTML(user.email)}')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center space-x-1.5 shadow">
-                    <i class="fa-solid fa-message"></i> <span>Message</span>
-                </button>
+                <div class="flex items-center space-x-2">
+                    <button onclick="toggleSubscribeUser('${sanitizeHTML(user.email)}', this)" class="${isSubbed ? 'bg-dark-700 text-gray-300' : 'bg-white text-dark-900'} px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shadow">
+                        ${isSubbed ? 'Subscribed ✓' : 'Subscribe'}
+                    </button>
+                    <button onclick="openChatWithUser('${sanitizeHTML(user.email)}')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center space-x-1.5 shadow">
+                        <i class="fa-solid fa-message"></i> <span>Message</span>
+                    </button>
+                </div>
             `;
             container.appendChild(card);
         });
@@ -771,10 +839,10 @@ function renderChatMessages() {
             const msg = doc.data();
             const isMe = msg.sender === currentUser.email;
             const msgDiv = document.createElement('div');
-            // প্রেরক ও প্রাপক অনুযায়ী ডান ও বাম পাশ এবং ভিন্ন রঙ (WhatsApp স্টাইল: নিজেরটা সবুজ, অন্যেরটা ডার্ক গ্রে)
-            msgDiv.className = `flex ${isMe ? 'justify-end' : 'justify-start'} my-1`;
+            // প্রেরক (Sender) ডান পাশে সবুজ, প্রাপক (Receiver) বাম পাশে ডার্ক গ্রে
+            msgDiv.className = `flex ${isMe ? 'justify-end' : 'justify-start'} my-1.5`;
             msgDiv.innerHTML = `
-                <div class="max-w-[75%] px-3.5 py-2 rounded-2xl text-xs shadow ${isMe ? 'bg-[#005c4b] text-white rounded-tr-none' : 'bg-[#202c33] text-gray-100 rounded-tl-none'}">
+                <div class="max-w-[75%] px-4 py-2.5 rounded-2xl text-xs shadow-md ${isMe ? 'bg-[#005c4b] text-white rounded-tr-none' : 'bg-[#202c33] text-gray-100 rounded-tl-none'}">
                     <p>${sanitizeHTML(msg.text)}</p>
                     <div class="text-[8px] text-right text-gray-300 mt-1">${sanitizeHTML(msg.time)}</div>
                 </div>
@@ -897,7 +965,7 @@ function setupProfileEditModal() {
     }
 }
 
-// --- VIDEO EDIT & DELETE MANAGEMENT (ভিডিও এডিট ও ডিলিট সিস্টেম) ---
+// --- VIDEO EDIT & DELETE MANAGEMENT ---
 function setupVideoEditModal() {
     const modal = document.getElementById('editVideoModal');
     const closeBtn = document.getElementById('closeEditVideoModal');
