@@ -1,13 +1,13 @@
 // --- Zynqra Firebase Master Admin Script (admin.js) ---
 
 const firebaseConfig = {
-    apiKey: "AIzaSyC4_R00zhvkJK24g4h-CtYwUq6B65Pq1bI",
-    authDomain: "zynqra-f832d.firebaseapp.com",
-    projectId: "zynqra-f832d",
-    storageBucket: "zynqra-f832d.appspot.com",
-    messagingSenderId: "542368091275",
-    appId: "1:542368091275:web:0e2e4bb1c9239ed2c6188e",
-    measurementId: "G-R4TFWEMJ3T"
+  apiKey: "AIzaSyC4_RGOzHvkjK24g4h-CtYhuwnUnvcVrg8",
+  authDomain: "zynqra-f832d.firebaseapp.com",
+  projectId: "zynqra-f832d",
+  storageBucket: "zynqra-f832d.firebasestorage.app",
+  messagingSenderId: "542368091275",
+  appId: "1:542368091275:web:0e2e4bb1c9239ed2c6188e",
+  measurementId: "G-R4TFWEMJ3T"
 };
 
 // Initialize Firebase if not already initialized
@@ -66,7 +66,7 @@ function setupAdminAuth() {
         }
     });
 
-    // গুগল পপআপ লগইন ট্রিগার
+    // গুগল পপআপ লগইন ট্রিপার
     if (loginBtn) {
         loginBtn.addEventListener('click', () => {
             const provider = new firebase.auth.GoogleAuthProvider();
