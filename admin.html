@@ -21,16 +21,20 @@
 </head>
 <body class="bg-[#0b0b0b] text-gray-100 min-h-screen text-xs">
 
-    <!-- Admin Authentication Guard Modal -->
+    <!-- Admin Authentication Guard Modal (Google Auth Secure) -->
     <div id="adminAuthGuard" class="fixed inset-0 bg-[#090909] z-50 flex flex-col items-center justify-center p-4">
         <div class="bg-[#121212] border border-red-600/30 p-6 rounded-3xl max-w-xs w-full text-center space-y-4 shadow-2xl">
             <div class="w-12 h-12 bg-red-950/50 text-red-500 rounded-full flex items-center justify-center mx-auto text-base border border-red-600/50">
                 <i class="fa-solid fa-user-shield"></i>
             </div>
             <h2 class="text-xs font-bold text-white">Master Admin Portal</h2>
-            <p id="adminGuardStatus" class="text-[11px] text-gray-400">Enter secure master key to unlock.</p>
-            <input type="password" id="adminSecretKeyInput" placeholder="Master Key (zynqra_admin_2026)" class="w-full bg-[#181818] border border-[#333] rounded-2xl px-3.5 py-2.5 text-white outline-none focus:border-red-500 text-xs text-center">
-            <button id="adminLoginVerifyBtn" class="w-full bg-red-600 text-white py-2.5 rounded-2xl font-bold hover:bg-red-500 transition text-xs cursor-pointer">Verify & Unlock</button>
+            <p id="adminGuardStatus" class="text-[11px] text-gray-400">Sign in with authorized Admin Google Account.</p>
+            
+            <!-- গুগল লগইন বাটন -->
+            <button id="adminGoogleLoginBtn" class="w-full bg-red-600 text-white py-2.5 rounded-2xl font-bold hover:bg-red-500 transition text-xs cursor-pointer flex items-center justify-center space-x-2">
+                <i class="fa-brands fa-google"></i> <span>Login with Admin Google</span>
+            </button>
+            
             <a href="index.html" class="block text-[10px] text-gray-500 hover:underline pt-1">Return to Zynqra App</a>
         </div>
     </div>
@@ -140,7 +144,7 @@
         </div>
     </div>
 
-    <!-- Admin JavaScript Logic with Anti-Bot View Protection & Full Features -->
+    <!-- Admin JavaScript Logic -->
     <script type="module" src="admin.js"></script>
 </body>
     </html>
