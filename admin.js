@@ -1,5 +1,6 @@
 // --- Zynqra Firebase Master Admin Script (admin.js) ---
 
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyC4_RGOzHvkjK24g4h-CtYhuwnUnvcVrg8",
   authDomain: "zynqra-f832d.firebaseapp.com",
@@ -16,7 +17,7 @@ if (!firebase.apps.length) {
 }
 const db = firebase.firestore();
 
-// নির্ধারিত মাস্টার অ্যাডমিন জিমেইল (আপনার সিকিউরড অ্যাকাউন্ট)
+// আপনার নির্দিষ্ট মাস্টার অ্যাডমিন জিমেইল (সিকিউরড অ্যাকাউন্ট)
 const ADMIN_EMAIL = "sadhinahmed718@gmail.com";
 
 // --- Advanced XSS Protection Utility ---
@@ -66,7 +67,7 @@ function setupAdminAuth() {
         }
     });
 
-    // গুগল পপআপ লগইন ট্রিপার
+    // গুগল পপআপ লগইন ট্রিগার
     if (loginBtn) {
         loginBtn.addEventListener('click', () => {
             const provider = new firebase.auth.GoogleAuthProvider();
