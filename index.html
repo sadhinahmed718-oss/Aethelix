@@ -47,10 +47,39 @@
     <header class="fixed top-0 left-0 right-0 h-14 bg-dark-900/90 backdrop-blur-xl border-b border-dark-700/80 z-50 flex items-center justify-between px-3 sm:px-6">
         <div class="flex items-center space-x-3">
             <button id="hamburgerBtn" class="p-2 hover:bg-dark-700/60 rounded-full text-gray-300 transition smooth-transition cursor-pointer"><i class="fa-solid fa-bars text-base"></i></button>
-            <a href="#" id="logoHome" class="flex items-center space-x-1.5 group">
-                <div class="bg-gradient-to-r from-brand-red via-purple-600 to-brand-cyan text-white px-3 py-1.5 rounded-2xl font-black text-xs sm:text-sm tracking-widest flex items-center shadow-lg shadow-brand-red/20">
-                    <i class="fa-solid fa-infinity mr-1.5 text-xs"></i> ZYNQRA
-                </div>
+            <a href="#" id="logoHome" class="flex items-center space-x-2 group">
+                <!-- আপনার দেওয়া নতুন SVG আইকন -->
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="w-8 h-8" style="border-radius: 25px; background: radial-gradient(circle at center, #181818 0%, #0f0f0f 100%);">
+                  <defs>
+                    <linearGradient id="neonGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stop-color="#00f2fe" stop-opacity="1" />
+                      <stop offset="100%" stop-color="#ff0033" stop-opacity="1" />
+                    </linearGradient>
+                    <filter id="neonGlow" x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="15" result="blur1" />
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur2" />
+                      <feMerge>
+                        <feMergeNode in="blur1" />
+                        <feMergeNode in="blur2" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                    <filter id="borderGlow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
+                      <feMerge>
+                        <feMergeNode in="blur" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                  </defs>
+                  <rect x="20" y="20" width="472" height="472" rx="95" fill="none" stroke="url(#neonGradient)" stroke-width="8" filter="url(#borderGlow)" opacity="0.9" />
+                  <g transform="translate(110, 160) scale(0.6)" filter="url(#neonGlow)">
+                    <circle cx="150" cy="150" r="100" stroke="#00f2fe" stroke-width="25" fill="none" stroke-linecap="round"/>
+                    <path d="M 230 150 Q 256 150, 280 180 L 320 230" stroke="url(#neonGradient)" stroke-width="20" fill="none" stroke-linecap="round"/>
+                    <path d="M 320 70 L 450 150 L 320 230 Z" stroke="#ff0033" stroke-width="25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  </g>
+                </svg>
+                <span class="font-black text-sm tracking-wider bg-gradient-to-r from-brand-cyan to-brand-red bg-clip-text text-transparent">ZYNQRA</span>
             </a>
         </div>
 
@@ -64,7 +93,7 @@
         </div>
 
         <div class="flex items-center space-x-2 sm:space-x-3">
-            <button id="notificationsBtn" class="relative p-2.5 hover:bg-dark-700/60 rounded-full text-gray-300 transition cursor-pointer"><i class="fa-regular fa-bell text-base"></i><span id="notifBadge" class="absolute top-1 right-1 bg-brand-red text-white text-[8px] px-1.5 py-0.2 rounded-full hidden">0</span></button>
+            <button id="notificationsBtn" class="relative p-2.5 hover:bg-dark-700/60 rounded-full text-gray-300 transition cursor-pointer"><i class="fa-regular fa-bell text-base"></i><span id="notifBadge" class="absolute top-1 right-1 bg-brand-red text-white text-[8px] px-1.5. py-0.2 rounded-full hidden">0</span></button>
             <div id="authContainer">
                 <button id="googleLoginBtn" class="flex items-center space-x-1.5 bg-brand-cyan/10 border border-brand-cyan/30 text-brand-cyan px-3.5 py-1.5 rounded-full font-semibold hover:bg-brand-cyan/20 transition cursor-pointer">
                     <i class="fa-brands fa-google"></i> <span class="hidden sm:inline">Google Login</span>
@@ -196,7 +225,7 @@
             </form>
         </section>
 
-        <!-- FRIENDS & SUBSCRIPTIONS (সাবস্ক্রাইব বাটন ও ডাইরেক্ট অ্যাকশনযুক্ত) -->
+        <!-- FRIENDS & SUBSCRIPTIONS -->
         <section id="page-friends" class="page-view hidden max-w-2xl mx-auto space-y-4">
             <div class="flex items-center justify-between">
                 <h2 class="text-sm font-bold text-white flex items-center"><i class="fa-solid fa-user-group text-pink-400 mr-2"></i> Friends & Subscribed Creators</h2>
@@ -310,9 +339,11 @@
                             <span id="profileStrikeCount" class="text-red-400">0 Strikes</span>
                         </div>
                     </div>
-                    <button id="openEditModalBtn" class="bg-brand-cyan/10 border border-brand-cyan/30 text-brand-cyan font-bold px-4 py-2 rounded-2xl hover:bg-brand-cyan/20 transition cursor-pointer text-xs flex items-center space-x-1.5 shadow">
-                        <i class="fa-solid fa-pen-to-square"></i> <span>Edit Profile</span>
-                    </button>
+                    <div class="flex flex-col space-y-2">
+                        <button id="openEditModalBtn" class="bg-brand-cyan/10 border border-brand-cyan/30 text-brand-cyan font-bold px-4 py-2 rounded-2xl hover:bg-brand-cyan/20 transition cursor-pointer text-xs flex items-center space-x-1.5 shadow">
+                            <i class="fa-solid fa-pen-to-square"></i> <span>Edit Profile</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -323,7 +354,7 @@
             </div>
         </section>
 
-        <!-- EXTERNAL CREATOR PUBLIC PROFILE VIEW (ইউজার প্রোফাইল ও তার ভিডিও লিস্ট) -->
+        <!-- EXTERNAL CREATOR PUBLIC PROFILE VIEW -->
         <section id="page-external-profile" class="page-view hidden max-w-2xl mx-auto space-y-4">
             <div class="bg-dark-800 border border-dark-700 rounded-3xl p-6 shadow-2xl space-y-4">
                 <div class="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-5">
@@ -526,4 +557,4 @@
     </script>
     <script type="module" src="app.js"></script>
 </body>
-    </html>
+        </html>
