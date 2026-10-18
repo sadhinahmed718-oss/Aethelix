@@ -1,4 +1,4 @@
-// --- Zynqra Firebase Main Script (app.js) ---
+// --- Aethelix Firebase Main Script (app.js) ---
 
 const firebaseConfig = {
     apiKey: "AIzaSyC4_RGOzHvkjK24g4h-CtYhuwnUnvcVrg8",
@@ -18,7 +18,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-let currentUser = null; // ইউনিক ইউজারের জন্য ইনিশিয়ালি নাল রাখা হলো যাতে ওভারল্যাপ না হয়
+let currentUser = null;
 let activeVideo = null;
 let activeChatContact = null;
 let globalAllVideos = [];
@@ -58,23 +58,21 @@ document.addEventListener('DOMContentLoaded', () => {
 function setupFirebaseAuthState() {
     auth.onAuthStateChanged(async (user) => {
         if (user) {
-            // ইউজারের নিজস্ব ইউনিক জিমেইল দিয়ে ডেটাবেস থেকে রিয়েল-টাইম ডাটা ফেচ করা
             const userRef = db.collection("users").doc(user.email);
             const doc = await userRef.get();
 
             if (doc.exists) {
                 currentUser = doc.data();
             } else {
-                // নতুন ইউজার হলে তার নিজস্ব ইউনিক অ্যাকাউন্ট তৈরি হবে
                 currentUser = {
-                    name: sanitizeHTML(user.displayName || 'Zynqra Creator'),
+                    name: sanitizeHTML(user.displayName || 'Aethelix Creator'),
                     email: sanitizeHTML(user.email),
                     avatar: sanitizeHTML(user.photoURL || 'https://picsum.photos/seed/user/100/100'),
                     subs: 0,
                     strikes: 0,
                     verified: false,
                     lastProfileUpdate: 0,
-                    bio: 'Welcome to my Zynqra channel!'
+                    bio: 'Welcome to my Aethelix channel!'
                 };
                 await userRef.set(currentUser);
             }
@@ -92,7 +90,7 @@ function setupGoogleAuth() {
     if (loginBtn) {
         loginBtn.onclick = () => {
             const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).then((result) => {
+            auth.signInWithPopup(provider).then(() => {
                 alert('Successfully Logged in with Google!');
             }).catch((error) => {
                 alert('Login Failed: ' + sanitizeHTML(error.message));
@@ -119,7 +117,7 @@ function initializeAppUI() {
             `;
         }
     }
-    if (currentUser && currentUser.email === 'admin@zynqra.com') {
+    if (currentUser && currentUser.email === 'admin@aethelix.com') {
         const adminLink = document.getElementById('adminPanelLink');
         if (adminLink) adminLink.classList.remove('hidden');
     }
@@ -214,7 +212,7 @@ function loadHomeFeed(category = 'all') {
                         <div class="flex items-center space-x-1 text-[10px] text-gray-400">
                             <span>${sanitizeHTML(video.creatorName)}</span>
                         </div>
-                        <p class="text-[9px] text-gray-500">${video.views || 0} views • ${sanitizeHTML(video.date)}</p>
+                        <p class="text-[9px] text-gray-500">${formatNumber(video.views || 0)} views • ${sanitizeHTML(video.date)}</p>
                     </div>
                 </div>
             `;
@@ -224,6 +222,14 @@ function loadHomeFeed(category = 'all') {
 
         loadHomeShortsCarousel(videos);
     });
+}
+
+// --- NUMBER FORMATTER (0 থেকে মিলিয়ন, বিলিয়ন) ---
+function formatNumber(num) {
+    if (num >= 1000000000) return (num / 1000000000).toFixed(1) + 'B';
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+    return num.toString();
 }
 
 // --- SEARCH ENGINE ---
@@ -325,7 +331,7 @@ function setupSearchEngine() {
                         <img src="${sanitizeHTML(video.creatorAvatar)}" class="w-8 h-8 rounded-full object-cover border border-dark-600">
                         <div class="flex-1 space-y-1">
                             <h3 class="font-bold text-white text-xs line-clamp-2">${sanitizeHTML(video.title)}</h3>
-                            <p class="text-[9px] text-gray-500">${video.views || 0} views • By ${sanitizeHTML(video.creatorName)}</p>
+                            <p class="text-[9px] text-gray-500">${formatNumber(video.views || 0)} views • By ${sanitizeHTML(video.creatorName)}</p>
                         </div>
                     </div>
                 `;
@@ -368,7 +374,7 @@ function setupFriendSearchEngine() {
                     <img src="${sanitizeHTML(user.avatar)}" class="w-10 h-10 rounded-full object-cover border border-brand-cyan group-hover:scale-105 transition">
                     <div>
                         <h4 class="font-bold text-white text-xs group-hover:text-brand-cyan transition">${sanitizeHTML(user.name)}</h4>
-                        <p class="text-[10px] text-gray-400">${user.subs || 0} subscribers</p>
+                        <p class="text-[10px] text-gray-400">${formatNumber(user.subs || 0)} subscribers</p>
                     </div>
                 </div>
                 <div class="flex items-center space-x-2">
@@ -391,17 +397,23 @@ window.toggleSubscribeUser = function(creatorEmail, btnElement) {
         return;
     }
     const subKey = `subscribed_${currentUser.email}_${creatorEmail}`;
-    if (localStorage.getItem(subKey)) {
-        localStorage.removeItem(subKey);
-        btnElement.innerText = 'Subscribe';
-        btnElement.className = 'bg-white text-dark-900 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shadow';
-        alert('Unsubscribed successfully.');
-    } else {
-        localStorage.setItem(subKey, 'true');
-        btnElement.innerText = 'Subscribed ✓';
-        btnElement.className = 'bg-dark-700 text-gray-300 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shadow';
-        alert('Successfully subscribed!');
-    }
+    db.collection("users").doc(creatorEmail).get().then(doc => {
+        let currentSubs = doc.exists ? (doc.data().subs || 0) : 0;
+        if (localStorage.getItem(subKey)) {
+            localStorage.removeItem(subKey);
+            currentSubs = Math.max(0, currentSubs - 1);
+            btnElement.innerText = 'Subscribe';
+            btnElement.className = 'bg-white text-dark-900 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shadow';
+            alert('Unsubscribed successfully.');
+        } else {
+            localStorage.setItem(subKey, 'true');
+            currentSubs += 1;
+            btnElement.innerText = 'Subscribed ✓';
+            btnElement.className = 'bg-dark-700 text-gray-300 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shadow';
+            alert('Successfully subscribed!');
+        }
+        db.collection("users").doc(creatorEmail).update({ subs: currentSubs });
+    });
 };
 
 // --- OFFLINE DOWNLOAD SYSTEM ---
@@ -410,7 +422,7 @@ function setupOfflineDownloadsUI() {
     if (downloadBtn) {
         downloadBtn.onclick = () => {
             if (!activeVideo) return;
-            let downloads = JSON.parse(localStorage.getItem('zynqra_offline_downloads') || '[]');
+            let downloads = JSON.parse(localStorage.getItem('aethelix_offline_downloads') || '[]');
             
             if (downloads.some(v => v.id === activeVideo.id)) {
                 alert('Video is already downloaded for offline viewing!');
@@ -418,7 +430,7 @@ function setupOfflineDownloadsUI() {
             }
 
             downloads.push(activeVideo);
-            localStorage.setItem('zynqra_offline_downloads', JSON.stringify(downloads));
+            localStorage.setItem('aethelix_offline_downloads', JSON.stringify(downloads));
             alert('Video successfully downloaded for offline mode!');
             loadOfflineDownloadsUI();
         };
@@ -429,7 +441,7 @@ function loadOfflineDownloadsUI() {
     const container = document.getElementById('offlineDownloadsGrid');
     if (!container) return;
 
-    let downloads = JSON.parse(localStorage.getItem('zynqra_offline_downloads') || '[]');
+    let downloads = JSON.parse(localStorage.getItem('aethelix_offline_downloads') || '[]');
     container.innerHTML = '';
 
     if (downloads.length === 0) {
@@ -469,7 +481,7 @@ function loadHomeShortsCarousel(videos) {
             <img src="${sanitizeHTML(short.thumbnailUrl || short.creatorAvatar)}" class="w-full h-full object-cover group-hover:scale-105 transition">
             <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-2.5">
                 <p class="text-[10px] font-bold text-white line-clamp-2">${sanitizeHTML(short.title)}</p>
-                <span class="text-[8px] text-gray-300">${short.views || 0} views</span>
+                <span class="text-[8px] text-gray-300">${formatNumber(short.views || 0)} views</span>
             </div>
         `;
         card.addEventListener('click', () => switchPage('shorts'));
@@ -477,7 +489,7 @@ function loadHomeShortsCarousel(videos) {
     });
 }
 
-// --- SHORTS PLAYER ---
+// --- SHORTS PLAYER (সহ লাইক, কমেন্ট, শেয়ার, সেটিংস ও ডাউনলোড/ডিলিট অপশন) ---
 function loadShortsFeed() {
     db.collection("videos").where("aspectRatio", "==", "9:16").onSnapshot((snapshot) => {
         const container = document.getElementById('shortsPlayerContainer');
@@ -498,7 +510,7 @@ function loadShortsFeed() {
                 <video src="${sanitizeHTML(short.videoUrl)}" loop class="w-full h-full object-cover"></video>
                 <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/20 p-4 flex flex-col justify-between pointer-events-none">
                     <div class="flex justify-between items-center pointer-events-auto">
-                        <span class="bg-amber-400 text-dark-900 font-bold text-[10px] px-3 py-1 rounded-full shadow-lg">Zynqra Short</span>
+                        <span class="bg-amber-400 text-dark-900 font-bold text-[10px] px-3 py-1 rounded-full shadow-lg">Aethelix Short</span>
                     </div>
                     <div class="space-y-2.5 pointer-events-auto pb-4">
                         <div class="flex items-center space-x-2.5 cursor-pointer" onclick="openExternalProfile('${sanitizeHTML(short.creatorEmail)}')">
@@ -508,20 +520,55 @@ function loadShortsFeed() {
                         <p class="text-xs text-gray-100 line-clamp-2">${sanitizeHTML(short.title)}</p>
                     </div>
                 </div>
-                <div class="absolute right-3 bottom-20 flex flex-col items-center space-y-5 pointer-events-auto">
-                    <button onclick="likeShort('${sanitizeHTML(short.id)}', ${short.likes || 0})" class="bg-dark-800/90 hover:bg-dark-700 text-white w-12 h-12 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90"><i class="fa-solid fa-heart text-brand-red text-base"></i><span class="text-[9px] font-bold mt-0.5">${short.likes || 0}</span></button>
-                    <button onclick="openVideoModal(${JSON.stringify(short).replace(/"/g, '&quot;')})" class="bg-dark-800/90 hover:bg-dark-700 text-white w-12 h-12 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90"><i class="fa-solid fa-comment text-brand-cyan text-base"></i><span class="text-[9px] font-bold mt-0.5">${(short.comments || []).length}</span></button>
+                <div class="absolute right-3 bottom-20 flex flex-col items-center space-y-4 pointer-events-auto">
+                    <button onclick="likeShort('${sanitizeHTML(short.id)}', ${short.likes || 0})" class="bg-dark-800/90 hover:bg-dark-700 text-white w-12 h-12 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90"><i class="fa-solid fa-heart text-brand-red text-base"></i><span class="text-[9px] font-bold mt-0.5">${formatNumber(short.likes || 0)}</span></button>
+                    <button onclick="openShortCommentsModal('${sanitizeHTML(short.id)}')" class="bg-dark-800/90 hover:bg-dark-700 text-white w-12 h-12 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90"><i class="fa-solid fa-comment text-brand-cyan text-base"></i><span class="text-[9px] font-bold mt-0.5">${formatNumber((short.comments || []).length)}</span></button>
                     <button onclick="navigator.clipboard.writeText(window.location.href); alert('Short link copied to clipboard!');" class="bg-dark-800/90 hover:bg-dark-700 text-white w-12 h-12 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90"><i class="fa-solid fa-share text-emerald-400 text-base"></i><span class="text-[9px] font-bold mt-0.5">Share</span></button>
+                    
+                    <!-- Shorts Settings (Download & Delete Options) -->
+                    <div class="relative">
+                        <button onclick="toggleShortsSettingsMenu('${sanitizeHTML(short.id)}')" class="bg-dark-800/90 hover:bg-dark-700 text-white w-12 h-12 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition"><i class="fa-solid fa-ellipsis-vertical text-gray-300 text-base"></i><span class="text-[8px] font-bold mt-0.5">Settings</span></button>
+                        <div id="shortsMenu_${short.id}" class="absolute right-14 bottom-0 bg-dark-800 border border-dark-700 rounded-2xl p-2 hidden z-40 w-36 shadow-2xl space-y-1">
+                            <button onclick="downloadShortVideo('${sanitizeHTML(short.videoUrl)}', '${sanitizeHTML(short.title)}')" class="w-full text-left px-3 py-2 hover:bg-dark-700 rounded-xl text-emerald-400 font-semibold flex items-center space-x-2"><i class="fa-solid fa-download"></i> <span>Download</span></button>
+                            ${currentUser && currentUser.email === short.creatorEmail ? `<button onclick="deleteShortVideo('${sanitizeHTML(short.id)}')" class="w-full text-left px-3 py-2 hover:bg-dark-700 rounded-xl text-red-400 font-semibold flex items-center space-x-2"><i class="fa-solid fa-trash"></i> <span>Delete</span></button>` : ''}
+                        </div>
+                    </div>
                 </div>
             `;
             const videoEl = slide.querySelector('video');
-            slide.addEventListener('click', () => videoEl.paused ? videoEl.play() : videoEl.pause());
+            slide.addEventListener('click', (e) => {
+                if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'I' && e.target.tagName !== 'IMG') {
+                    videoEl.paused ? videoEl.play() : videoEl.pause();
+                }
+            });
             container.appendChild(slide);
         });
     });
 }
 
-function likeShort(id, currentLikes) {
+window.toggleShortsSettingsMenu = function(id) {
+    const menu = document.getElementById(`shortsMenu_${id}`);
+    if (menu) menu.classList.toggle('hidden');
+};
+
+window.downloadShortVideo = function(url, title) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (title || 'short') + '.mp4';
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    alert('Short video download started!');
+};
+
+window.deleteShortVideo = function(id) {
+    if (confirm('Are you sure you want to delete this short?')) {
+        db.collection("videos").doc(id).delete().then(() => alert('Short deleted successfully!'));
+    }
+};
+
+window.likeShort = function(id, currentLikes) {
     if (!currentUser) {
         alert('Please login with Google to like shorts!');
         return;
@@ -537,7 +584,15 @@ function likeShort(id, currentLikes) {
         localStorage.setItem(likeKey, 'true');
         alert('Short liked successfully!');
     });
-}
+};
+
+window.openShortCommentsModal = function(id) {
+    db.collection("videos").doc(id).get().then(doc => {
+        if(!doc.exists) return;
+        const video = { id: doc.id, ...doc.data() };
+        openVideoModal(video);
+    });
+};
 
 // --- EXTERNAL PUBLIC PROFILE VIEW ---
 function openExternalProfile(email) {
@@ -553,7 +608,7 @@ function openExternalProfile(email) {
         document.getElementById('extProfileName').innerText = user.name;
         document.getElementById('extProfileEmail').innerText = user.email;
         document.getElementById('extProfileBio').innerText = user.bio || 'No bio added.';
-        document.getElementById('extProfileSubs').innerText = `${user.subs || 0} Subscribers`;
+        document.getElementById('extProfileSubs').innerText = `${formatNumber(user.subs || 0)} Subscribers`;
         
         const subBtn = document.getElementById('extSubscribeBtn');
         const isSubbed = currentUser && localStorage.getItem(`subscribed_${currentUser.email}_${user.email}`);
@@ -565,17 +620,7 @@ function openExternalProfile(email) {
                     alert('Please login to subscribe!');
                     return;
                 }
-                if (localStorage.getItem(`subscribed_${currentUser.email}_${user.email}`)) {
-                    localStorage.removeItem(`subscribed_${currentUser.email}_${user.email}`);
-                    subBtn.innerText = 'Subscribe';
-                    subBtn.className = 'bg-white text-dark-900 font-bold px-4 py-2 rounded-2xl text-xs hover:bg-gray-200 transition cursor-pointer shadow';
-                    alert('Unsubscribed successfully.');
-                } else {
-                    localStorage.setItem(`subscribed_${currentUser.email}_${user.email}`, 'true');
-                    subBtn.innerText = 'Subscribed ✓';
-                    subBtn.className = 'bg-dark-700 text-gray-300 font-bold px-4 py-2 rounded-2xl text-xs cursor-default shadow';
-                    alert(`Successfully subscribed to ${user.name}!`);
-                }
+                toggleSubscribeUser(user.email, subBtn);
             };
         }
 
@@ -597,7 +642,7 @@ function openExternalProfile(email) {
                     <img src="${sanitizeHTML(v.thumbnailUrl || v.creatorAvatar)}" class="w-20 h-12 rounded-xl object-cover">
                     <div class="flex-1 truncate">
                         <h4 class="font-bold text-white text-[11px] truncate">${sanitizeHTML(v.title)}</h4>
-                        <div class="text-[9px] text-gray-400 mt-1">${v.views || 0} views</div>
+                        <div class="text-[9px] text-gray-400 mt-1">${formatNumber(v.views || 0)} views</div>
                     </div>
                 `;
                 card.onclick = () => openVideoModal({ id: vDoc.id, ...v });
@@ -617,8 +662,12 @@ function openVideoModal(video) {
     document.getElementById('modalVideoTitle').innerText = video.title;
     document.getElementById('modalCreatorName').innerText = video.creatorName;
     document.getElementById('modalCreatorAvatar').src = video.creatorAvatar;
-    document.getElementById('modalLikeCount').innerText = video.likes || 0;
-    document.getElementById('modalCreatorSubs').innerText = `100 subscribers`;
+    document.getElementById('modalLikeCount').innerText = formatNumber(video.likes || 0);
+
+    db.collection("users").doc(video.creatorEmail).get().then(doc => {
+        const subsCount = doc.exists ? (doc.data().subs || 0) : 0;
+        document.getElementById('modalCreatorSubs').innerText = `${formatNumber(subsCount)} subscribers`;
+    });
 
     const creatorClick = document.getElementById('modalCreatorProfileClick');
     if (creatorClick) {
@@ -692,28 +741,24 @@ function openVideoModal(video) {
         const newLikes = (video.likes || 0) + 1;
         db.collection("videos").doc(video.id).update({ likes: newLikes }).then(() => {
             localStorage.setItem(userLikeKey, 'true');
-            document.getElementById('modalLikeCount').innerText = newLikes;
+            document.getElementById('modalLikeCount').innerText = formatNumber(newLikes);
             alert('Video liked successfully!');
         });
     };
 
     const subscribeBtn = document.getElementById('modalSubscribeBtn');
-    subscribeBtn.onclick = () => {
-        if (!currentUser) {
-            alert('Please login to subscribe!');
-            return;
-        }
-        const userSubKey = `subscribed_${currentUser.email}_${video.creatorEmail}`;
-        if (localStorage.getItem(userSubKey)) {
-            alert('You are already subscribed to this creator!');
-            return;
-        }
-
-        localStorage.setItem(userSubKey, 'true');
-        subscribeBtn.innerText = 'Subscribed ✓';
-        subscribeBtn.className = 'bg-dark-700 text-gray-300 px-4 py-2 rounded-full font-bold text-xs cursor-default';
-        alert(`Successfully subscribed to ${video.creatorName}!`);
-    };
+    const isSubbed = currentUser && localStorage.getItem(`subscribed_${currentUser.email}_${video.creatorEmail}`);
+    if (subscribeBtn) {
+        subscribeBtn.innerText = isSubbed ? 'Subscribed ✓' : 'Subscribe';
+        subscribeBtn.className = isSubbed ? 'bg-dark-700 text-gray-300 px-4 py-2 rounded-full font-bold text-xs cursor-default' : 'bg-white text-dark-900 px-4 py-2 rounded-full font-bold hover:bg-gray-200 transition text-xs cursor-pointer shadow';
+        subscribeBtn.onclick = () => {
+            if (!currentUser) {
+                alert('Please login to subscribe!');
+                return;
+            }
+            toggleSubscribeUser(video.creatorEmail, subscribeBtn);
+        };
+    }
 }
 
 function incrementVideoView(id, currentViews) {
@@ -728,7 +773,7 @@ function renderComments(video) {
     if (!list) return;
     list.innerHTML = '';
     const comments = video.comments || [];
-    badge.innerText = comments.length;
+    badge.innerText = formatNumber(comments.length);
 
     if (comments.length === 0) {
         list.innerHTML = `<p class="text-gray-500 text-[10px]">No comments yet.</p>`;
@@ -760,7 +805,7 @@ function renderRelatedVideos(currentVideo) {
                     <div class="flex-1 truncate">
                         <h5 class="font-bold text-white text-xs line-clamp-2">${sanitizeHTML(video.title)}</h5>
                         <div class="text-[9px] text-gray-400 mt-1">${sanitizeHTML(video.creatorName)}</div>
-                        <div class="text-[8px] text-gray-500">${video.views || 0} views</div>
+                        <div class="text-[8px] text-gray-500">${formatNumber(video.views || 0)} views</div>
                     </div>
                 `;
                 card.addEventListener('click', () => openVideoModal(video));
@@ -770,7 +815,7 @@ function renderRelatedVideos(currentVideo) {
     });
 }
 
-// --- MESSENGER CHAT (Direct Profile to Chat Fix) ---
+// --- MESSENGER CHAT (Direct Profile to Chat & Red Notification Badge) ---
 function loadFriendsList() {
     db.collection("users").get().then((snapshot) => {
         const container = document.getElementById('friendsListContainer');
@@ -790,7 +835,7 @@ function loadFriendsList() {
                     <img src="${sanitizeHTML(user.avatar)}" class="w-10 h-10 rounded-full object-cover border border-brand-cyan group-hover:scale-105 transition">
                     <div>
                         <h4 class="font-bold text-white text-xs group-hover:text-brand-cyan transition">${sanitizeHTML(user.name)}</h4>
-                        <p class="text-[10px] text-gray-400">${user.subs || 0} subscribers</p>
+                        <p class="text-[10px] text-gray-400">${formatNumber(user.subs || 0)} subscribers</p>
                     </div>
                 </div>
                 <div class="flex items-center space-x-2">
@@ -884,7 +929,7 @@ function renderChatMessages() {
     });
 }
 
-// --- NOTIFICATION SYSTEM ---
+// --- NOTIFICATION SYSTEM (লাল বাতি উইথ কাউন্ট) ---
 function loadNotifications() {
     const notifBadge = document.getElementById('notifBadge');
     const notificationsBtn = document.getElementById('notificationsBtn');
@@ -894,11 +939,14 @@ function loadNotifications() {
         if (!snapshot.empty) {
             notifBadge.innerText = snapshot.size;
             notifBadge.classList.remove('hidden');
+        } else {
+            notifBadge.classList.add('hidden');
         }
     });
 
     notificationsBtn.onclick = () => {
-        alert('You have secure system notifications and creator updates.');
+        switchPage('messenger');
+        alert('Opening your recent chats & notifications.');
     };
 }
 
@@ -1105,7 +1153,7 @@ function setupEventListeners() {
                     date: new Date().toISOString().split('T')[0]
                 });
 
-                alert('Video successfully uploaded and published on Zynqra!');
+                alert('Video successfully uploaded and published on Aethelix!');
                 uploadForm.reset();
                 switchPage('home');
             } catch (error) {
@@ -1134,6 +1182,14 @@ function setupEventListeners() {
                 text: text,
                 time: timeNow,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            // Trigger Notification
+            db.collection("notifications").add({
+                recipient: activeChatContact.email,
+                sender: currentUser.name,
+                text: text,
+                date: new Date().toISOString()
             });
 
             chatInput.value = '';
@@ -1233,15 +1289,15 @@ function loadAnalytics() {
                 <div class="bg-dark-800 p-3 rounded-2xl flex items-center justify-between border border-dark-700 text-xs">
                     <span class="font-bold text-white truncate max-w-[60%]">${sanitizeHTML(v.title)}</span>
                     <div class="space-x-3 text-[10px] text-gray-300">
-                        <span><i class="fa-solid fa-eye text-brand-cyan"></i> ${v.views || 0}</span>
-                        <span><i class="fa-solid fa-thumbs-up text-brand-red"></i> ${v.likes || 0}</span>
+                        <span><i class="fa-solid fa-eye text-brand-cyan"></i> ${formatNumber(v.views || 0)}</span>
+                        <span><i class="fa-solid fa-thumbs-up text-brand-red"></i> ${formatNumber(v.likes || 0)}</span>
                     </div>
                 </div>
             `;
         });
 
-        document.getElementById('analyticTotalViews').innerText = totalViews.toLocaleString();
-        document.getElementById('analyticTotalLikes').innerText = totalLikes.toLocaleString();
+        document.getElementById('analyticTotalViews').innerText = formatNumber(totalViews);
+        document.getElementById('analyticTotalLikes').innerText = formatNumber(totalLikes);
         document.getElementById('analyticTopVideo').innerText = sanitizeHTML(topVideoTitle);
     });
 }
@@ -1256,7 +1312,7 @@ function loadUserProfile() {
         document.getElementById('profileName').innerText = freshUser.name;
         document.getElementById('profileEmail').innerText = freshUser.email;
         document.getElementById('profileBio').innerText = freshUser.bio || 'No bio added.';
-        document.getElementById('profileSubCount').innerText = `${freshUser.subs || 0} Subs`;
+        document.getElementById('profileSubCount').innerText = `${formatNumber(freshUser.subs || 0)} Subs`;
         document.getElementById('profileStrikeCount').innerText = `${freshUser.strikes || 0} Strikes`;
 
         const verifiedBadge = document.getElementById('profileVerifiedBadge');
@@ -1288,7 +1344,7 @@ function loadUserProfile() {
                         <img src="${sanitizeHTML(v.thumbnailUrl || v.creatorAvatar)}" class="w-16 h-10 rounded-xl object-cover">
                         <div class="truncate">
                             <h4 class="font-bold text-white text-[11px] truncate">${sanitizeHTML(v.title)}</h4>
-                            <div class="text-[9px] text-gray-400 mt-0.5">${v.views || 0} views • ${v.likes || 0} likes</div>
+                            <div class="text-[9px] text-gray-400 mt-0.5">${formatNumber(v.views || 0)} views • ${formatNumber(v.likes || 0)} likes</div>
                         </div>
                     </div>
                     <div class="flex items-center space-x-2 shrink-0">
