@@ -1,4 +1,4 @@
-// --- Aethelix Firebase Main Script (app.js) ---
+// --- Zynqra Firebase Main Script (app.js) ---
 
 const firebaseConfig = {
     apiKey: "AIzaSyC4_RGOzHvkjK24g4h-CtYhuwnUnvcVrg8",
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadNotifications();
 });
 
-// --- Firebase Persistent Auth State (ইউনিক অ্যাকাউন্ট হ্যান্ডলিং) ---
+// --- Firebase Persistent Auth State & Account Status Check ---
 function setupFirebaseAuthState() {
     auth.onAuthStateChanged(async (user) => {
         if (user) {
@@ -63,16 +63,22 @@ function setupFirebaseAuthState() {
 
             if (doc.exists) {
                 currentUser = doc.data();
+                if (currentUser.isBanned) {
+                    alert('Your Zynqra account has been banned/restricted by the Admin due to content policy violations.');
+                    auth.signOut();
+                    return;
+                }
             } else {
                 currentUser = {
-                    name: sanitizeHTML(user.displayName || 'Aethelix Creator'),
+                    name: sanitizeHTML(user.displayName || 'Zynqra Creator'),
                     email: sanitizeHTML(user.email),
                     avatar: sanitizeHTML(user.photoURL || 'https://picsum.photos/seed/user/100/100'),
                     subs: 0,
                     strikes: 0,
                     verified: false,
+                    isBanned: false,
                     lastProfileUpdate: 0,
-                    bio: 'Welcome to my Aethelix channel!'
+                    bio: 'Welcome to my Zynqra channel!'
                 };
                 await userRef.set(currentUser);
             }
@@ -91,7 +97,7 @@ function setupGoogleAuth() {
         loginBtn.onclick = () => {
             const provider = new firebase.auth.GoogleAuthProvider();
             auth.signInWithPopup(provider).then(() => {
-                alert('Successfully Logged in with Google!');
+                alert('Successfully Logged in to Zynqra!');
             }).catch((error) => {
                 alert('Login Failed: ' + sanitizeHTML(error.message));
             });
@@ -117,7 +123,7 @@ function initializeAppUI() {
             `;
         }
     }
-    if (currentUser && currentUser.email === 'admin@aethelix.com') {
+    if (currentUser && currentUser.email === 'admin@zynqra.com') {
         const adminLink = document.getElementById('adminPanelLink');
         if (adminLink) adminLink.classList.remove('hidden');
     }
@@ -171,7 +177,7 @@ function switchPage(pageId) {
     if (pageId === 'downloads') loadOfflineDownloadsUI();
 }
 
-// --- HOME FEED & RENDERING FROM FIRESTORE ---
+// --- DYNAMIC HOME FEED & ALGORITHM RENDERING ---
 function loadHomeFeed(category = 'all') {
     db.collection("videos").orderBy("date", "desc").onSnapshot((snapshot) => {
         const grid = document.getElementById('videoGrid');
@@ -179,6 +185,9 @@ function loadHomeFeed(category = 'all') {
         grid.innerHTML = '';
         let videos = [];
         snapshot.forEach(doc => videos.push({ id: doc.id, ...doc.data() }));
+        
+        // Dynamic sorting algorithm: User's own or recently uploaded/trending videos appear first
+        videos.sort((a, b) => (b.views || 0) - (a.views || 0) || new Date(b.date) - new Date(a.date));
         globalAllVideos = videos;
 
         const filtered = videos.filter(v => {
@@ -224,7 +233,7 @@ function loadHomeFeed(category = 'all') {
     });
 }
 
-// --- NUMBER FORMATTER (0 থেকে মিলিয়ন, বিলিয়ন) ---
+// --- NUMBER FORMATTER ---
 function formatNumber(num) {
     if (num >= 1000000000) return (num / 1000000000).toFixed(1) + 'B';
     if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
@@ -344,7 +353,7 @@ function setupSearchEngine() {
     });
 }
 
-// --- FRIEND & SUBSCRIBER SEARCH ENGINE ---
+// --- CREATOR & VIEWS DIRECTORY SEARCH ENGINE ---
 function setupFriendSearchEngine() {
     const friendSearchInput = document.getElementById('friendSearchInput');
     if (!friendSearchInput) return;
@@ -361,7 +370,7 @@ function setupFriendSearchEngine() {
 
         container.innerHTML = '';
         if (filteredUsers.length === 0) {
-            container.innerHTML = `<p class="text-gray-500 text-xs col-span-full text-center py-5">No friends or creators found.</p>`;
+            container.innerHTML = `<p class="text-gray-500 text-xs col-span-full text-center py-5">No creators found.</p>`;
             return;
         }
 
@@ -374,7 +383,7 @@ function setupFriendSearchEngine() {
                     <img src="${sanitizeHTML(user.avatar)}" class="w-10 h-10 rounded-full object-cover border border-brand-cyan group-hover:scale-105 transition">
                     <div>
                         <h4 class="font-bold text-white text-xs group-hover:text-brand-cyan transition">${sanitizeHTML(user.name)}</h4>
-                        <p class="text-[10px] text-gray-400">${formatNumber(user.subs || 0)} subscribers</p>
+                        <p class="text-[10px] text-gray-400">${formatNumber(user.subs || 0)} subscribers • ${formatNumber(user.totalViews || 0)} Views</p>
                     </div>
                 </div>
                 <div class="flex items-center space-x-2">
@@ -422,7 +431,7 @@ function setupOfflineDownloadsUI() {
     if (downloadBtn) {
         downloadBtn.onclick = () => {
             if (!activeVideo) return;
-            let downloads = JSON.parse(localStorage.getItem('aethelix_offline_downloads') || '[]');
+            let downloads = JSON.parse(localStorage.getItem('zynqra_offline_downloads') || '[]');
             
             if (downloads.some(v => v.id === activeVideo.id)) {
                 alert('Video is already downloaded for offline viewing!');
@@ -430,7 +439,7 @@ function setupOfflineDownloadsUI() {
             }
 
             downloads.push(activeVideo);
-            localStorage.setItem('aethelix_offline_downloads', JSON.stringify(downloads));
+            localStorage.setItem('zynqra_offline_downloads', JSON.stringify(downloads));
             alert('Video successfully downloaded for offline mode!');
             loadOfflineDownloadsUI();
         };
@@ -441,7 +450,7 @@ function loadOfflineDownloadsUI() {
     const container = document.getElementById('offlineDownloadsGrid');
     if (!container) return;
 
-    let downloads = JSON.parse(localStorage.getItem('aethelix_offline_downloads') || '[]');
+    let downloads = JSON.parse(localStorage.getItem('zynqra_offline_downloads') || '[]');
     container.innerHTML = '';
 
     if (downloads.length === 0) {
@@ -489,7 +498,7 @@ function loadHomeShortsCarousel(videos) {
     });
 }
 
-// --- SHORTS PLAYER (সহ লাইক, কমেন্ট, শেয়ার, সেটিংস ও ডাউনলোড/ডিলিট অপশন) ---
+// --- SHORTS PLAYER (9:16 Vertical, Subs, Profile Navigation, Comments & Heart ❤️ Likes) ---
 function loadShortsFeed() {
     db.collection("videos").where("aspectRatio", "==", "9:16").onSnapshot((snapshot) => {
         const container = document.getElementById('shortsPlayerContainer');
@@ -504,28 +513,33 @@ function loadShortsFeed() {
         }
 
         shorts.forEach(short => {
+            const isSubbed = currentUser && localStorage.getItem(`subscribed_${currentUser.email}_${short.creatorEmail}`);
             const slide = document.createElement('div');
             slide.className = 'shorts-slide w-full h-full relative flex items-center justify-center bg-black snap-start shrink-0';
             slide.innerHTML = `
                 <video src="${sanitizeHTML(short.videoUrl)}" loop class="w-full h-full object-cover"></video>
                 <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/20 p-4 flex flex-col justify-between pointer-events-none">
                     <div class="flex justify-between items-center pointer-events-auto">
-                        <span class="bg-amber-400 text-dark-900 font-bold text-[10px] px-3 py-1 rounded-full shadow-lg">Aethelix Short</span>
+                        <span class="bg-amber-400 text-dark-900 font-bold text-[10px] px-3 py-1 rounded-full shadow-lg">Zynqra Short</span>
                     </div>
                     <div class="space-y-2.5 pointer-events-auto pb-4">
-                        <div class="flex items-center space-x-2.5 cursor-pointer" onclick="openExternalProfile('${sanitizeHTML(short.creatorEmail)}')">
-                            <img src="${sanitizeHTML(short.creatorAvatar)}" class="w-10 h-10 rounded-full border-2 border-brand-cyan shadow">
-                            <span class="font-bold text-white text-sm">${sanitizeHTML(short.creatorName)}</span>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2.5 cursor-pointer" onclick="openExternalProfile('${sanitizeHTML(short.creatorEmail)}')">
+                                <img src="${sanitizeHTML(short.creatorAvatar)}" class="w-10 h-10 rounded-full border-2 border-brand-cyan shadow object-cover">
+                                <span class="font-bold text-white text-sm">${sanitizeHTML(short.creatorName)}</span>
+                            </div>
+                            <button onclick="toggleSubscribeUser('${sanitizeHTML(short.creatorEmail)}', this)" class="${isSubbed ? 'bg-dark-700 text-gray-300' : 'bg-white text-dark-900'} px-3.5 py-1.5 rounded-full text-xs font-bold transition cursor-pointer shadow">
+                                ${isSubbed ? 'Subscribed ✓' : 'Subscribe'}
+                            </button>
                         </div>
                         <p class="text-xs text-gray-100 line-clamp-2">${sanitizeHTML(short.title)}</p>
                     </div>
                 </div>
                 <div class="absolute right-3 bottom-20 flex flex-col items-center space-y-4 pointer-events-auto">
                     <button onclick="likeShort('${sanitizeHTML(short.id)}', ${short.likes || 0})" class="bg-dark-800/90 hover:bg-dark-700 text-white w-12 h-12 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90"><i class="fa-solid fa-heart text-brand-red text-base"></i><span class="text-[9px] font-bold mt-0.5">${formatNumber(short.likes || 0)}</span></button>
-                    <button onclick="openShortCommentsModal('${sanitizeHTML(short.id)}')" class="bg-dark-800/90 hover:bg-dark-700 text-white w-12 h-12 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90"><i class="fa-solid fa-comment text-brand-cyan text-base"></i><span class="text-[9px] font-bold mt-0.5">${formatNumber((short.comments || []).length)}</span></button>
+                    <button onclick="openShortsCommentsModal('${sanitizeHTML(short.id)}')" class="bg-dark-800/90 hover:bg-dark-700 text-white w-12 h-12 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90"><i class="fa-solid fa-comment text-brand-cyan text-base"></i><span class="text-[9px] font-bold mt-0.5">${formatNumber((short.comments || []).length)}</span></button>
                     <button onclick="navigator.clipboard.writeText(window.location.href); alert('Short link copied to clipboard!');" class="bg-dark-800/90 hover:bg-dark-700 text-white w-12 h-12 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90"><i class="fa-solid fa-share text-emerald-400 text-base"></i><span class="text-[9px] font-bold mt-0.5">Share</span></button>
                     
-                    <!-- Shorts Settings (Download & Delete Options) -->
                     <div class="relative">
                         <button onclick="toggleShortsSettingsMenu('${sanitizeHTML(short.id)}')" class="bg-dark-800/90 hover:bg-dark-700 text-white w-12 h-12 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition"><i class="fa-solid fa-ellipsis-vertical text-gray-300 text-base"></i><span class="text-[8px] font-bold mt-0.5">Settings</span></button>
                         <div id="shortsMenu_${short.id}" class="absolute right-14 bottom-0 bg-dark-800 border border-dark-700 rounded-2xl p-2 hidden z-40 w-36 shadow-2xl space-y-1">
@@ -537,7 +551,7 @@ function loadShortsFeed() {
             `;
             const videoEl = slide.querySelector('video');
             slide.addEventListener('click', (e) => {
-                if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'I' && e.target.tagName !== 'IMG') {
+                if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'I' && e.target.tagName !== 'IMG' && e.target.tagName !== 'SPAN') {
                     videoEl.paused ? videoEl.play() : videoEl.pause();
                 }
             });
@@ -586,15 +600,78 @@ window.likeShort = function(id, currentLikes) {
     });
 };
 
-window.openShortCommentsModal = function(id) {
+// --- SHORTS COMMENTS BOTTOM SHEET WITH ❤️ LOVE LIKES ---
+let activeShortCommentId = null;
+
+window.openShortsCommentsModal = function(id) {
+    activeShortCommentId = id;
+    const sheet = document.getElementById('shortsModalSheet');
+    if (sheet) sheet.classList.remove('hidden');
+    renderShortsComments(id);
+};
+
+function renderShortsComments(id) {
     db.collection("videos").doc(id).get().then(doc => {
         if(!doc.exists) return;
-        const video = { id: doc.id, ...doc.data() };
-        openVideoModal(video);
+        const short = doc.data();
+        const comments = short.comments || [];
+        const list = document.getElementById('shortsCommentsList');
+        if (!list) return;
+        list.innerHTML = '';
+        
+        document.getElementById('shortsSheetTitle').innerText = `Shorts Comments (${comments.length})`;
+
+        if (comments.length === 0) {
+            list.innerHTML = `<p class="text-gray-500 text-xs text-center py-5">No comments yet. Be the first to comment!</p>`;
+            return;
+        }
+
+        comments.forEach((c, idx) => {
+            const isCreator = currentUser && currentUser.email === short.creatorEmail;
+            const commentDiv = document.createElement('div');
+            commentDiv.className = 'bg-dark-800 p-3 rounded-2xl border border-dark-700 space-y-1.5';
+            commentDiv.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <span class="font-bold text-white text-xs">${sanitizeHTML(c.user)}</span>
+                    <span class="text-[9px] text-gray-400">${sanitizeHTML(c.date || '')}</span>
+                </div>
+                <p class="text-gray-200 text-xs">${sanitizeHTML(c.text)}</p>
+                <div class="flex items-center justify-between pt-1">
+                    <button onclick="likeShortComment('${id}', ${idx})" class="flex items-center space-x-1 text-[11px] text-brand-red font-semibold cursor-pointer hover:scale-105 transition">
+                        <i class="fa-solid fa-heart"></i> <span>${c.hearts || 0}</span>
+                    </button>
+                    ${isCreator ? `<button onclick="creatorLoveShortComment('${id}',${idx})" class="text-[10px] text-amber-400 font-bold bg-dark-700 px-2.5 py-0.5 rounded-full cursor-pointer hover:bg-dark-600">Creator Heart ❤️</button>` : ''}
+                </div>
+            `;
+            list.appendChild(commentDiv);
+        });
+    });
+}
+
+window.likeShortComment = function(videoId, commentIndex) {
+    db.collection("videos").doc(videoId).get().then(doc => {
+        if (!doc.exists) return;
+        let comments = doc.data().comments || [];
+        comments[commentIndex].hearts = (comments[commentIndex].hearts || 0) + 1;
+        db.collection("videos").doc(videoId).update({ comments: comments }).then(() => {
+            renderShortsComments(videoId);
+        });
     });
 };
 
-// --- EXTERNAL PUBLIC PROFILE VIEW ---
+window.creatorLoveShortComment = function(videoId, commentIndex) {
+    db.collection("videos").doc(videoId).get().then(doc => {
+        if (!doc.exists) return;
+        let comments = doc.data().comments || [];
+        comments[commentIndex].hearts = (comments[commentIndex].hearts || 0) + 5; // Creator heart carries more weight/likes
+        db.collection("videos").doc(videoId).update({ comments: comments }).then(() => {
+            alert('Creator heart added to comment!');
+            renderShortsComments(videoId);
+        });
+    });
+};
+
+// --- EXTERNAL PUBLIC PROFILE VIEW & VIDEO COUNT ---
 function openExternalProfile(email) {
     db.collection("users").doc(email).get().then((doc) => {
         if (!doc.exists) {
@@ -610,6 +687,12 @@ function openExternalProfile(email) {
         document.getElementById('extProfileBio').innerText = user.bio || 'No bio added.';
         document.getElementById('extProfileSubs').innerText = `${formatNumber(user.subs || 0)} Subscribers`;
         
+        const verifiedIcon = document.getElementById('extProfileNameVerifiedIcon');
+        if (verifiedIcon) {
+            if (user.verified) verifiedIcon.classList.remove('hidden');
+            else verifiedIcon.classList.add('hidden');
+        }
+
         const subBtn = document.getElementById('extSubscribeBtn');
         const isSubbed = currentUser && localStorage.getItem(`subscribed_${currentUser.email}_${user.email}`);
         if (subBtn) {
@@ -628,6 +711,9 @@ function openExternalProfile(email) {
 
         db.collection("videos").where("creatorEmail", "==", user.email).get().then((vSnapshot) => {
             const vGrid = document.getElementById('extUserVideosGrid');
+            const countBadge = document.getElementById('extProfileVideoCount');
+            if (countBadge) countBadge.innerText = `${vSnapshot.size} Videos`;
+
             if (!vGrid) return;
             vGrid.innerHTML = '';
             if (vSnapshot.empty) {
@@ -652,7 +738,7 @@ function openExternalProfile(email) {
     });
 }
 
-// --- VIDEO MODAL & GLOBAL ADS ---
+// --- VIDEO MODAL, ANTI-BOT VIEW COUNTING & ADMOB SKIPPABLE ADS ---
 function openVideoModal(video) {
     activeVideo = video;
     const modal = document.getElementById('videoModal');
@@ -663,6 +749,9 @@ function openVideoModal(video) {
     document.getElementById('modalCreatorName').innerText = video.creatorName;
     document.getElementById('modalCreatorAvatar').src = video.creatorAvatar;
     document.getElementById('modalLikeCount').innerText = formatNumber(video.likes || 0);
+    document.getElementById('modalVideoViewsCount').innerText = `${formatNumber(video.views || 0)} views`;
+    document.getElementById('modalVideoDate').innerText = video.date || '2026';
+    document.getElementById('modalVideoDescText').innerText = video.desc || 'No description provided.';
 
     db.collection("users").doc(video.creatorEmail).get().then(doc => {
         const subsCount = doc.exists ? (doc.data().subs || 0) : 0;
@@ -683,11 +772,12 @@ function openVideoModal(video) {
     renderRelatedVideos(video);
     modal.classList.remove('hidden');
 
+    // Anti-Bot View Protection & AdMob Rewarded/Skippable Ad System (16:9 Aspect Ratio)
     db.collection("global_ads").get().then((adSnap) => {
         if (!adSnap.empty) {
             const adData = adSnap.docs[0].data();
             adOverlay.classList.remove('hidden');
-            let timeLeft = 5;
+            let timeLeft = 5; // 5 seconds skippable ad
             const timerText = document.getElementById('adTimerText');
             const skipBtn = document.getElementById('skipAdBtn');
             skipBtn.disabled = true;
@@ -696,7 +786,7 @@ function openVideoModal(video) {
             const adCountdown = setInterval(() => {
                 timeLeft--;
                 if (timeLeft > 0) {
-                    timerText.innerText = `Sponsored Ad playing... ${timeLeft}s`;
+                    timerText.innerText = `Google AdMob Sponsored Ad... playing ${timeLeft}s`;
                 } else {
                     clearInterval(adCountdown);
                     timerText.innerText = adData.title || 'Sponsored Ad completed!';
@@ -708,21 +798,12 @@ function openVideoModal(video) {
             skipBtn.onclick = () => {
                 adOverlay.classList.add('hidden');
                 player.play();
-                
-                const viewKey = `viewed_video_${video.id}`;
-                if (!sessionStorage.getItem(viewKey)) {
-                    sessionStorage.setItem(viewKey, 'true');
-                    incrementVideoView(video.id, video.views || 0);
-                }
+                processSecureVideoView(video);
             };
         } else {
             adOverlay.classList.add('hidden');
             player.play();
-            const viewKey = `viewed_video_${video.id}`;
-            if (!sessionStorage.getItem(viewKey)) {
-                sessionStorage.setItem(viewKey, 'true');
-                incrementVideoView(video.id, video.views || 0);
-            }
+            processSecureVideoView(video);
         }
     });
 
@@ -761,10 +842,28 @@ function openVideoModal(video) {
     }
 }
 
-function incrementVideoView(id, currentViews) {
-    db.collection("videos").doc(id).update({
-        views: currentViews + 1
-    });
+// --- Anti-Bot Secure View Incrementer ---
+function processSecureVideoView(video) {
+    const viewSessionKey = `viewed_session_${video.id}`;
+    const lastViewTime = localStorage.getItem(`last_view_${video.id}`);
+    const now = Date.now();
+
+    // Anti-bot check: prevent rapid reloading views within 30 seconds from same browser session
+    if (!sessionStorage.getItem(viewSessionKey) && (!lastViewTime || (now - lastViewTime > 30000))) {
+        sessionStorage.setItem(viewSessionKey, 'true');
+        localStorage.setItem(`last_view_${video.id}`, now);
+
+        const newViews = (video.views || 0) + 1;
+        db.collection("videos").doc(video.id).update({ views: newViews });
+
+        // Update creator total views accumulator
+        db.collection("users").doc(video.creatorEmail).get().then(doc => {
+            if (doc.exists) {
+                let currentTotalViews = doc.data().totalViews || 0;
+                db.collection("users").doc(video.creatorEmail).update({ totalViews: currentTotalViews + 1 });
+            }
+        });
+    }
 }
 
 function renderComments(video) {
@@ -815,7 +914,7 @@ function renderRelatedVideos(currentVideo) {
     });
 }
 
-// --- MESSENGER CHAT (Direct Profile to Chat & Red Notification Badge) ---
+// --- MESSENGER CHAT (Unread Notification Badge & Sender Order) ---
 function loadFriendsList() {
     db.collection("users").get().then((snapshot) => {
         const container = document.getElementById('friendsListContainer');
@@ -835,7 +934,7 @@ function loadFriendsList() {
                     <img src="${sanitizeHTML(user.avatar)}" class="w-10 h-10 rounded-full object-cover border border-brand-cyan group-hover:scale-105 transition">
                     <div>
                         <h4 class="font-bold text-white text-xs group-hover:text-brand-cyan transition">${sanitizeHTML(user.name)}</h4>
-                        <p class="text-[10px] text-gray-400">${formatNumber(user.subs || 0)} subscribers</p>
+                        <p class="text-[10px] text-gray-400">${formatNumber(user.subs || 0)} subscribers • ${formatNumber(user.totalViews || 0)} Views</p>
                     </div>
                 </div>
                 <div class="flex items-center space-x-2">
@@ -857,15 +956,29 @@ function loadMessengerContacts() {
         const container = document.getElementById('chatContactsList');
         if (!container) return;
         container.innerHTML = '';
+        
+        let users = [];
         snapshot.forEach(doc => {
-            const user = doc.data();
-            if (currentUser && user.email === currentUser.email) return;
+            if (!currentUser || doc.data().email !== currentUser.email) {
+                users.push(doc.data());
+            }
+        });
+
+        users.forEach(user => {
+            const unreadCount = parseInt(localStorage.getItem(`unread_${currentUser?.email}_${user.email}`) || '0');
             const item = document.createElement('div');
-            item.className = 'p-2 flex items-center justify-center hover:bg-[#202c33] cursor-pointer transition border-b border-dark-700/30';
+            item.className = 'p-2 flex flex-col items-center justify-center hover:bg-[#202c33] cursor-pointer transition border-b border-dark-700/30 relative';
             item.innerHTML = `
-                <img src="${sanitizeHTML(user.avatar)}" class="w-9 h-9 rounded-full object-cover border border-emerald-500/40" title="${sanitizeHTML(user.name)}">
+                <div class="relative">
+                    <img src="${sanitizeHTML(user.avatar)}" class="w-9 h-9 rounded-full object-cover border border-emerald-500/40" title="${sanitizeHTML(user.name)}">
+                    ${unreadCount > 0 ? `<span class="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] px-1.5 py-0.2 rounded-full font-bold">${unreadCount}</span>` : ''}
+                </div>
             `;
-            item.onclick = () => selectActiveChatContact(user);
+            item.onclick = () => {
+                localStorage.setItem(`unread_${currentUser?.email}_${user.email}`, '0');
+                selectActiveChatContact(user);
+                loadMessengerContacts();
+            };
             container.appendChild(item);
         });
     });
@@ -929,9 +1042,10 @@ function renderChatMessages() {
     });
 }
 
-// --- NOTIFICATION SYSTEM (লাল বাতি উইথ কাউন্ট) ---
+// --- NOTIFICATIONS SYSTEM ---
 function loadNotifications() {
     const notifBadge = document.getElementById('notifBadge');
+    const sidebarMsgBadge = document.getElementById('sidebarMsgBadge');
     const notificationsBtn = document.getElementById('notificationsBtn');
     if (!notifBadge || !notificationsBtn) return;
 
@@ -939,14 +1053,18 @@ function loadNotifications() {
         if (!snapshot.empty) {
             notifBadge.innerText = snapshot.size;
             notifBadge.classList.remove('hidden');
+            if (sidebarMsgBadge) {
+                sidebarMsgBadge.innerText = snapshot.size;
+                sidebarMsgBadge.classList.remove('hidden');
+            }
         } else {
             notifBadge.classList.add('hidden');
+            if (sidebarMsgBadge) sidebarMsgBadge.classList.add('hidden');
         }
     });
 
     notificationsBtn.onclick = () => {
         switchPage('messenger');
-        alert('Opening your recent chats & notifications.');
     };
 }
 
@@ -1067,7 +1185,7 @@ window.deleteUserVideo = async function(id) {
     }
 };
 
-// --- EVENT LISTENERS & CLOUDINARY UPLOAD ---
+// --- EVENT LISTENERS & CLOUDINARY UPLOAD (Porn / Nudity Moderation Check) ---
 function setupEventListeners() {
     const uploadForm = document.getElementById('uploadForm');
     if (uploadForm) {
@@ -1077,14 +1195,46 @@ function setupEventListeners() {
                 alert('Please login with Google to upload videos!');
                 return;
             }
+
+            if (currentUser.isBanned) {
+                alert('Your account is restricted from uploading videos.');
+                return;
+            }
+
             const title = sanitizeHTML(document.getElementById('videoTitle').value);
             const category = sanitizeHTML(document.getElementById('videoCategory').value);
             const aspectRatio = sanitizeHTML(document.getElementById('videoAspectRatio').value);
+            const desc = sanitizeHTML(document.getElementById('videoDesc').value);
             const videoFile = document.getElementById('videoFile').files[0];
             const thumbFile = document.getElementById('thumbnailFile').files[0];
 
             if (!videoFile) {
                 alert('Please select a video file.');
+                return;
+            }
+
+            // Keyword content moderation for explicit / pornographic terms in title or description
+            const pornKeywords = ['porn', 'xxx', 'sex', 'naked', 'adult', 'nude'];
+            const containsRestrictedContent = pornKeywords.some(keyword => title.toLowerCase().includes(keyword) || desc.toLowerCase().includes(keyword));
+
+            if (containsRestrictedContent) {
+                // Apply strike & restrict user profile, notify admin panel
+                let newStrikes = (currentUser.strikes || 0) + 1;
+                let isRestricted = newStrikes >= 2;
+                
+                await db.collection("users").doc(currentUser.email).update({
+                    strikes: newStrikes,
+                    isBanned: isRestricted
+                });
+
+                await db.collection("admin_notices").add({
+                    userEmail: currentUser.email,
+                    userName: currentUser.name,
+                    reason: 'Uploaded adult / nude or restricted content violation.',
+                    date: new Date().toISOString()
+                });
+
+                alert('Warning: Your upload violates Zynqra community guidelines regarding adult content. Your account has received a strike/restriction.');
                 return;
             }
 
@@ -1145,7 +1295,7 @@ function setupEventListeners() {
 
                 if (submitBtn) submitBtn.innerText = 'Saving to Database...';
                 await db.collection("videos").add({
-                    title, category, aspectRatio, videoUrl, thumbnailUrl,
+                    title, category, aspectRatio, desc, videoUrl, thumbnailUrl,
                     creatorName: currentUser.name,
                     creatorEmail: currentUser.email,
                     creatorAvatar: currentUser.avatar,
@@ -1153,7 +1303,7 @@ function setupEventListeners() {
                     date: new Date().toISOString().split('T')[0]
                 });
 
-                alert('Video successfully uploaded and published on Aethelix!');
+                alert('Video successfully uploaded and published on Zynqra!');
                 uploadForm.reset();
                 switchPage('home');
             } catch (error) {
@@ -1183,6 +1333,11 @@ function setupEventListeners() {
                 time: timeNow,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
+
+            // Increment unread count in local storage for recipient
+            const unreadKey = `unread_${activeChatContact.email}_${currentUser.email}`;
+            const currentUnread = parseInt(localStorage.getItem(unreadKey) || '0');
+            localStorage.setItem(unreadKey, currentUnread + 1);
 
             // Trigger Notification
             db.collection("notifications").add({
@@ -1238,6 +1393,52 @@ function setupEventListeners() {
         toggleCommentsHeader.onclick = () => {
             commentsSectionBody.classList.toggle('hidden');
             commentToggleIcon.classList.toggle('rotate-180');
+        };
+    }
+
+    // YouTube Style Description Toggle
+    const descBox = document.getElementById('videoDescBoxContainer');
+    const descText = document.getElementById('modalVideoDescText');
+    const descToggle = document.getElementById('descToggleText');
+    if (descBox && descText && descToggle) {
+        descBox.onclick = () => {
+            descText.classList.toggle('line-clamp-1');
+            if (descText.classList.contains('line-clamp-1')) {
+                descToggle.innerText = '...more';
+            } else {
+                descToggle.innerText = 'Show less';
+            }
+        };
+    }
+
+    // Shorts Comments Sheet Close
+    const closeShortsSheetBtn = document.getElementById('closeShortsSheetBtn');
+    const shortsModalSheet = document.getElementById('shortsModalSheet');
+    if (closeShortsSheetBtn && shortsModalSheet) {
+        closeShortsSheetBtn.onclick = () => shortsModalSheet.classList.add('hidden');
+    }
+
+    const postShortsCommentBtn = document.getElementById('postShortsCommentBtn');
+    const shortsCommentInput = document.getElementById('shortsCommentInput');
+    if (postShortsCommentBtn && shortsCommentInput) {
+        postShortsCommentBtn.onclick = () => {
+            const text = sanitizeHTML(shortsCommentInput.value.trim());
+            if (!text || !activeShortCommentId) return;
+
+            db.collection("videos").doc(activeShortCommentId).get().then(doc => {
+                if (!doc.exists) return;
+                let comments = doc.data().comments || [];
+                comments.push({
+                    user: currentUser ? currentUser.name : 'Guest',
+                    text: text,
+                    hearts: 0,
+                    date: new Date().toLocaleDateString()
+                });
+                db.collection("videos").doc(activeShortCommentId).update({ comments: comments }).then(() => {
+                    shortsCommentInput.value = '';
+                    renderShortsComments(activeShortCommentId);
+                });
+            });
         };
     }
 
@@ -1328,6 +1529,9 @@ function loadUserProfile() {
 
     db.collection("videos").where("creatorEmail", "==", currentUser.email).get().then((snapshot) => {
         const myGrid = document.getElementById('myUploadedVideosGrid');
+        const videoCountBadge = document.getElementById('profileVideoCountBadge');
+        if (videoCountBadge) videoCountBadge.innerText = `${snapshot.size} Videos`;
+
         if (!myGrid) return;
         myGrid.innerHTML = '';
 
@@ -1355,4 +1559,4 @@ function loadUserProfile() {
             `;
         });
     });
-}
+    }
