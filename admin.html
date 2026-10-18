@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zynqra - Secured Master Admin Dashboard</title>
+    <title>Zynqra - Ultimate Master Admin Command Center</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -12,7 +12,12 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-    <style>body { font-family: 'Inter', sans-serif; background-color: #0b0b0b; color: #f1f1f1; }</style>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0b0b0b; color: #f1f1f1; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: #0b0b0b; }
+        ::-webkit-scrollbar-thumb { background: #333333; border-radius: 2px; }
+    </style>
 </head>
 <body class="bg-[#0b0b0b] text-gray-100 min-h-screen text-xs">
 
@@ -35,26 +40,48 @@
         <header class="bg-[#121212] border-b border-[#222222] px-6 py-3.5 flex items-center justify-between">
             <div class="flex items-center space-x-3">
                 <span class="bg-red-600 text-white px-2.5 py-0.5 rounded font-black text-[9px]">MASTER ADMIN</span>
-                <h1 class="font-bold text-white text-xs">Zynqra Command Center</h1>
+                <h1 class="font-bold text-white text-xs">Zynqra Ultimate Command Center</h1>
             </div>
-            <a href="index.html" class="bg-[#1f1f1f] hover:bg-[#272727] px-4 py-1.5 rounded-xl font-semibold text-gray-300 transition">Back to App</a>
+            <div class="flex items-center space-x-3">
+                <span class="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-full"><i class="fa-solid fa-circle text-[8px] mr-1"></i> Live Secure Node</span>
+                <a href="index.html" class="bg-[#1f1f1f] hover:bg-[#272727] px-4 py-1.5 rounded-xl font-semibold text-gray-300 transition">Back to App</a>
+            </div>
         </header>
 
         <main class="flex-1 p-6 max-w-7xl mx-auto w-full space-y-5">
             <!-- Stats Overview Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div class="bg-[#121212] border border-[#222222] p-4.5 rounded-2xl shadow-lg">
-                    <div class="text-[11px] text-gray-400 mb-1">Total Users</div>
+                    <div class="text-[11px] text-gray-400 mb-1">Total Platform Users</div>
                     <div id="adminTotalUsers" class="text-xl font-bold text-white">0</div>
                 </div>
                 <div class="bg-[#121212] border border-[#222222] p-4.5 rounded-2xl shadow-lg">
-                    <div class="text-[11px] text-gray-400 mb-1">Total Videos</div>
+                    <div class="text-[11px] text-gray-400 mb-1">Total Published Videos</div>
                     <div id="adminTotalVideos" class="text-xl font-bold text-white">0</div>
                 </div>
                 <div class="bg-[#121212] border border-[#222222] p-4.5 rounded-2xl shadow-lg">
-                    <div class="text-[11px] text-gray-400 mb-1">AI / Flagged Queue</div>
+                    <div class="text-[11px] text-gray-400 mb-1">Active Ad Campaigns</div>
+                    <div id="adminActiveAdsCount" class="text-xl font-bold text-brand-cyan">0</div>
+                </div>
+                <div class="bg-[#121212] border border-[#222222] p-4.5 rounded-2xl shadow-lg">
+                    <div class="text-[11px] text-gray-400 mb-1">AI Flagged / Queue</div>
                     <div id="adminPendingVideos" class="text-xl font-bold text-amber-500">0</div>
                 </div>
+            </div>
+
+            <!-- NEW: Global Ads & Sponsor Management Hub (বিজ্ঞাপন যুক্ত করার প্যানেল) -->
+            <div class="bg-[#121212] border border-brand-cyan/30 rounded-2xl p-5 space-y-4 shadow-xl">
+                <div class="flex items-center justify-between border-b border-[#222] pb-3">
+                    <h2 class="font-bold text-white text-xs flex items-center"><i class="fa-solid fa-rectangle-ad text-brand-cyan mr-2"></i> Global Ads & Sponsor Campaign Manager</h2>
+                    <span class="text-[10px] text-brand-cyan bg-brand-cyan/10 px-3 py-1 rounded-full font-semibold">Monetization & Promotion Control</span>
+                </div>
+                <form id="adminAdForm" class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    <input type="text" id="adTitle" placeholder="Sponsor / Ad Title" required class="bg-[#181818] border border-[#333] rounded-xl px-3 py-2 text-white outline-none text-xs">
+                    <input type="url" id="adVideoUrl" placeholder="Ad Video MP4 Link" required class="bg-[#181818] border border-[#333] rounded-xl px-3 py-2 text-white outline-none text-xs">
+                    <input type="url" id="adTargetUrl" placeholder="Target Redirect URL" required class="bg-[#181818] border border-[#333] rounded-xl px-3 py-2 text-white outline-none text-xs">
+                    <button type="submit" class="bg-brand-cyan text-dark-900 font-bold py-2 rounded-xl hover:bg-cyan-400 transition cursor-pointer text-xs">Deploy Global Ad</button>
+                </form>
+                <div id="adminActiveAdsList" class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2"></div>
             </div>
 
             <!-- Monetization & Monthly Payout / Views Management Hub -->
@@ -80,17 +107,17 @@
                 </div>
             </div>
 
-            <!-- User Management, Strikes & Ban Control Table -->
+            <!-- User Management, Live Monitoring & Ban Control Table -->
             <div class="bg-[#121212] border border-[#222222] rounded-2xl p-4.5 space-y-3 shadow-lg">
-                <h2 class="font-bold text-white text-xs flex items-center"><i class="fa-solid fa-users-gear text-red-400 mr-2"></i> User Management, Strikes & Ban Control</h2>
+                <h2 class="font-bold text-white text-xs flex items-center"><i class="fa-solid fa-users-gear text-red-400 mr-2"></i> User Management, Live Monitoring & Ban Control</h2>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-gray-300 text-[11px]">
                         <thead class="bg-[#181818] text-gray-400 uppercase text-[9px]">
                             <tr>
-                                <th class="p-3">User</th>
-                                <th class="p-3">Email / Payout Info</th>
-                                <th class="p-3">Strikes / Status</th>
-                                <th class="p-3">Actions</th>
+                                <th class="p-3">User Profile</th>
+                                <th class="p-3">Email & Payout Info</th>
+                                <th class="p-3">Stats & Activity</th>
+                                <th class="p-3">Actions (Inspect / Ban)</th>
                             </tr>
                         </thead>
                         <tbody id="adminUsersTableBody" class="divide-y divide-[#222222]"></tbody>
@@ -100,7 +127,20 @@
         </main>
     </div>
 
+    <!-- NEW: Live User Inspection Modal (ইউজারের প্রোফাইল ও অ্যাক্টিভিটি পর্যবেক্ষণের জন্য) -->
+    <div id="adminUserInspectModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[#121212] border border-[#333] rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl relative max-h-[85vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-[#222] pb-3">
+                <h3 class="font-bold text-white text-sm flex items-center"><i class="fa-solid fa-eye text-brand-cyan mr-2"></i> User Live Activity Inspector</h3>
+                <button id="closeInspectModal" class="text-gray-400 hover:text-white p-1 cursor-pointer"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div id="inspectUserDetails" class="space-y-3 text-xs"></div>
+            <h4 class="font-bold text-white text-xs pt-2">User Uploaded Videos & Content:</h4>
+            <div id="inspectUserVideos" class="space-y-2"></div>
+        </div>
+    </div>
+
     <!-- Admin JavaScript Logic -->
     <script type="module" src="admin.js"></script>
 </body>
-</html>
+                </html>
