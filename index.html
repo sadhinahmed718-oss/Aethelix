@@ -196,7 +196,7 @@
             </form>
         </section>
 
-        <!-- FRIENDS & SUBSCRIPTIONS -->
+        <!-- FRIENDS & SUBSCRIPTIONS (সাবস্ক্রাইব বাটন ও ডাইরেক্ট অ্যাকশনযুক্ত) -->
         <section id="page-friends" class="page-view hidden max-w-2xl mx-auto space-y-4">
             <div class="flex items-center justify-between">
                 <h2 class="text-sm font-bold text-white flex items-center"><i class="fa-solid fa-user-group text-pink-400 mr-2"></i> Friends & Subscribed Creators</h2>
@@ -323,7 +323,7 @@
             </div>
         </section>
 
-        <!-- EXTERNAL CREATOR PUBLIC PROFILE VIEW (অন্যান্য ইউজারের প্রোফাইল দেখার পেজ) -->
+        <!-- EXTERNAL CREATOR PUBLIC PROFILE VIEW (ইউজার প্রোফাইল ও তার ভিডিও লিস্ট) -->
         <section id="page-external-profile" class="page-view hidden max-w-2xl mx-auto space-y-4">
             <div class="bg-dark-800 border border-dark-700 rounded-3xl p-6 shadow-2xl space-y-4">
                 <div class="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-5">
@@ -332,12 +332,15 @@
                         <h2 id="extProfileName" class="text-sm font-bold text-white">Creator Name</h2>
                         <p id="extProfileEmail" class="text-[11px] text-gray-400">email@zynqra.com</p>
                         <p id="extProfileBio" class="text-[11px] text-gray-300 italic">Bio...</p>
-                        <span id="extProfileSubs" class="text-[10px] text-brand-cyan font-bold">0 Subs</span>
+                        <span id="extProfileSubs" class="text-[10px] text-brand-cyan font-bold">0 Subscribers</span>
                     </div>
-                    <button id="extMessageBtn" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-2xl text-xs font-semibold shadow cursor-pointer"><i class="fa-solid fa-message mr-1"></i> Message</button>
+                    <div class="flex items-center space-x-2">
+                        <button id="extSubscribeBtn" class="bg-white text-dark-900 font-bold px-4 py-2 rounded-2xl text-xs hover:bg-gray-200 transition cursor-pointer shadow">Subscribe</button>
+                        <button id="extMessageBtn" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-2xl text-xs font-semibold shadow cursor-pointer"><i class="fa-solid fa-message mr-1"></i> Message</button>
+                    </div>
                 </div>
             </div>
-            <div class="bg-dark-800 border border-dark-700 rounded-3xl p-5">
+            <div class="bg-dark-800 border border-dark-700 rounded-3xl p-5 space-y-3">
                 <h3 class="font-bold text-white text-xs mb-3">Creator's Videos</h3>
                 <div id="extUserVideosGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
             </div>
@@ -426,7 +429,7 @@
         </div>
     </div>
 
-    <!-- EDIT VIDEO TITLE MODAL (ভিডিও টাইটেল এডিট করার পপ-আপ) -->
+    <!-- EDIT VIDEO TITLE MODAL -->
     <div id="editVideoModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
         <div class="bg-dark-800 border border-dark-700 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl relative">
             <div class="flex justify-between items-center border-b border-dark-700 pb-3">
@@ -446,11 +449,11 @@
                 <button id="closeVideoModalMobile" class="p-2 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
 
-            <!-- AdMob Direct Video Ad Overlay -->
+            <!-- AdMob / Global Sponsor Ad Direct Overlay -->
             <div id="adMobAdOverlay" class="absolute inset-0 bg-dark-950 z-30 hidden flex flex-col items-center justify-center p-6 text-center text-xs">
                 <div class="bg-brand-cyan/10 border border-brand-cyan/30 p-6 rounded-3xl max-w-xs w-full space-y-3 shadow-2xl relative">
                     <span class="absolute top-2 left-3 bg-yellow-500 text-dark-900 px-2 py-0.5 rounded font-bold uppercase text-[8px]">Ad</span>
-                    <span class="bg-brand-cyan text-dark-900 px-2.5 py-0.5 rounded-full font-bold uppercase text-[9px]">Google AdMob Live Ad</span>
+                    <span class="bg-brand-cyan text-dark-900 px-2.5 py-0.5 rounded-full font-bold uppercase text-[9px]">Sponsored Video Ad</span>
                     <p id="adTimerText" class="font-bold text-white text-xs">Ad playing... 5s</p>
                     <button id="skipAdBtn" disabled class="bg-dark-700 text-gray-400 px-5 py-2 rounded-2xl font-semibold transition cursor-not-allowed text-[11px]">Skip Ad</button>
                 </div>
@@ -523,4 +526,4 @@
     </script>
     <script type="module" src="app.js"></script>
 </body>
-                                                                               </html>
+    </html>
