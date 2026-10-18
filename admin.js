@@ -16,7 +16,8 @@ if (!firebase.apps.length) {
 }
 const db = firebase.firestore();
 
-const MASTER_KEY = 'zynqra_admin_2026';
+// নির্ধারিত মাস্টার অ্যাডমিন জিমেইল (আপনার সিকিউরড অ্যাকাউন্ট)
+const ADMIN_EMAIL = "sadhinahmed718@gmail.com";
 
 // --- Advanced XSS Protection Utility ---
 function sanitizeHTML(str) {
@@ -35,39 +36,47 @@ document.addEventListener('DOMContentLoaded', () => {
     setupAdminInspectModal();
 });
 
-// --- Admin Authentication Guard ---
+// --- Secure Firebase Google Auth Admin Guard ---
 function setupAdminAuth() {
-    const loginBtn = document.getElementById('adminLoginVerifyBtn');
-    const secretInput = document.getElementById('adminSecretKeyInput');
+    const loginBtn = document.getElementById('adminGoogleLoginBtn') || document.getElementById('adminLoginVerifyBtn');
     const guardModal = document.getElementById('adminAuthGuard');
     const dashboard = document.getElementById('adminDashboard');
     const statusText = document.getElementById('adminGuardStatus');
 
-    if (sessionStorage.getItem('zynqra_admin_auth') === 'true') {
-        if (guardModal) guardModal.classList.add('hidden');
-        if (dashboard) dashboard.classList.remove('hidden');
-        loadAdminDashboardData();
-        return;
-    }
-
-    if (loginBtn && secretInput) {
-        loginBtn.addEventListener('click', () => {
-            const enteredKey = secretInput.value.trim();
-            if (enteredKey === MASTER_KEY) {
-                sessionStorage.setItem('zynqra_admin_auth', 'true');
+    // ফায়ারবেস অথেনটিকেশন স্টেট মনিটর
+    firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+            if (user.email === ADMIN_EMAIL) {
+                // সঠিক অ্যাডমিন ইমেল হলে প্যানেল আনলক হবে
                 if (guardModal) guardModal.classList.add('hidden');
                 if (dashboard) dashboard.classList.remove('hidden');
                 loadAdminDashboardData();
             } else {
+                // অন্য কেউ লগইন করার চেষ্টা করলে সাথে সাথে সাইন আউট করে দিবে
+                firebase.auth().signOut();
                 if (statusText) {
-                    statusText.innerText = 'Invalid Master Key! Access Denied.';
+                    statusText.innerText = 'Access Denied! Unauthorized Google Account.';
                     statusText.className = 'text-[11px] text-red-500 font-bold';
                 }
             }
-        });
+        } else {
+            // লগইন করা না থাকলে গার্ড মোড অন থাকবে
+            if (guardModal) guardModal.classList.remove('hidden');
+            if (dashboard) dashboard.classList.add('hidden');
+        }
+    });
 
-        secretInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') loginBtn.click();
+    // গুগল পপআপ লগইন ট্রিগার
+    if (loginBtn) {
+        loginBtn.addEventListener('click', () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            firebase.auth().signInWithPopup(provider).catch((error) => {
+                console.error("Admin Login Error:", error.message);
+                if (statusText) {
+                    statusText.innerText = 'Login Failed: ' + sanitizeHTML(error.message);
+                    statusText.className = 'text-[11px] text-red-500 font-bold';
+                }
+            });
         });
     }
 }
@@ -95,7 +104,7 @@ function renderAdminStats() {
     }).catch(err => console.error("Error fetching users:", err));
 }
 
-// --- Global Ads & Sponsor Campaign Manager (YouTube/AdMob 16:9 & Shorts Rewarded Ads) ---
+// --- Global Ads & Sponsor Campaign Manager ---
 function setupAdminAdManager() {
     const adForm = document.getElementById('adminAdForm');
     if (!adForm) return;
@@ -166,7 +175,7 @@ window.deleteGlobalAd = function(docId) {
     }
 };
 
-// --- Live User Inspection Modal (ইউজারের প্রোফাইল ও ভিডিও পর্যবেক্ষণ) ---
+// --- Live User Inspection Modal ---
 function setupAdminInspectModal() {
     const modal = document.getElementById('adminUserInspectModal');
     const closeBtn = document.getElementById('closeInspectModal');
