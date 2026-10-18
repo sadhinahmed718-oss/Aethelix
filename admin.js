@@ -95,7 +95,7 @@ function renderAdminStats() {
     }).catch(err => console.error("Error fetching users:", err));
 }
 
-// --- Global Ads & Sponsor Campaign Manager (অ্যাডমিন প্যানেল থেকে অ্যাড বা AdMob বসানোর সিস্টেম) ---
+// --- Global Ads & Sponsor Campaign Manager (YouTube/AdMob 16:9 & Shorts Rewarded Ads) ---
 function setupAdminAdManager() {
     const adForm = document.getElementById('adminAdForm');
     if (!adForm) return;
