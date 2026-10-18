@@ -11,12 +11,14 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-firebase.initializeApp(firebaseConfig);
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
 const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-let currentUser = { name: 'Guest User', email: 'guest@zynqra.com', avatar: 'https://picsum.photos/seed/guest/100/100', subs: 0, strikes: 0, verified: false, lastProfileUpdate: 0 };
+let currentUser = null; // ইউনিক ইউজারের জন্য ইনিশিয়ালি নাল রাখা হলো যাতে ওভারল্যাপ না হয়
 let activeVideo = null;
 let activeChatContact = null;
 let globalAllVideos = [];
@@ -24,7 +26,7 @@ let globalAllUsers = [];
 let unsubscribeChat = null;
 let editingVideoId = null;
 
-// --- Advanced XSS Protection Utility ---
+// --- Advanced XSS & Injection Protection Utility ---
 function sanitizeHTML(str) {
     if (!str) return '';
     return String(str)
@@ -36,8 +38,8 @@ function sanitizeHTML(str) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    setupFirebaseAuthState();
     setupGoogleAuth();
-    initializeAppUI();
     setupNavigation();
     loadHomeFeed();
     loadShortsFeed();
@@ -52,6 +54,38 @@ document.addEventListener('DOMContentLoaded', () => {
     loadNotifications();
 });
 
+// --- Firebase Persistent Auth State (ইউনিক অ্যাকাউন্ট হ্যান্ডলিং) ---
+function setupFirebaseAuthState() {
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            // ইউজারের নিজস্ব ইউনিক জিমেইল দিয়ে ডেটাবেস থেকে রিয়েল-টাইম ডাটা ফেচ করা
+            const userRef = db.collection("users").doc(user.email);
+            const doc = await userRef.get();
+
+            if (doc.exists) {
+                currentUser = doc.data();
+            } else {
+                // নতুন ইউজার হলে তার নিজস্ব ইউনিক অ্যাকাউন্ট তৈরি হবে
+                currentUser = {
+                    name: sanitizeHTML(user.displayName || 'Zynqra Creator'),
+                    email: sanitizeHTML(user.email),
+                    avatar: sanitizeHTML(user.photoURL || 'https://picsum.photos/seed/user/100/100'),
+                    subs: 0,
+                    strikes: 0,
+                    verified: false,
+                    lastProfileUpdate: 0,
+                    bio: 'Welcome to my Zynqra channel!'
+                };
+                await userRef.set(currentUser);
+            }
+            initializeAppUI();
+        } else {
+            currentUser = null;
+            initializeAppUI();
+        }
+    });
+}
+
 // --- Google Authentication ---
 function setupGoogleAuth() {
     const loginBtn = document.getElementById('googleLoginBtn');
@@ -59,18 +93,6 @@ function setupGoogleAuth() {
         loginBtn.onclick = () => {
             const provider = new firebase.auth.GoogleAuthProvider();
             auth.signInWithPopup(provider).then((result) => {
-                const user = result.user;
-                currentUser = {
-                    name: sanitizeHTML(user.displayName),
-                    email: sanitizeHTML(user.email),
-                    avatar: sanitizeHTML(user.photoURL),
-                    subs: 0,
-                    strikes: 0,
-                    verified: false,
-                    lastProfileUpdate: 0
-                };
-                db.collection("users").doc(user.email).set(currentUser, { merge: true });
-                initializeAppUI();
                 alert('Successfully Logged in with Google!');
             }).catch((error) => {
                 alert('Login Failed: ' + sanitizeHTML(error.message));
@@ -81,13 +103,19 @@ function setupGoogleAuth() {
 
 // --- UI INITIALIZATION & NAVIGATION ---
 function initializeAppUI() {
-    if (currentUser && currentUser.email !== 'guest@zynqra.com') {
-        const authContainer = document.getElementById('authContainer');
-        if (authContainer) {
+    const authContainer = document.getElementById('authContainer');
+    if (authContainer) {
+        if (currentUser) {
             authContainer.innerHTML = `
                 <div id="userProfileHeader" class="flex items-center space-x-2 cursor-pointer relative" onclick="switchPage('profile')">
                     <img src="${sanitizeHTML(currentUser.avatar)}" alt="Profile" class="w-8 h-8 rounded-full object-cover border border-brand-cyan shadow-sm">
                 </div>
+            `;
+        } else {
+            authContainer.innerHTML = `
+                <button id="googleLoginBtn" onclick="triggerGoogleLogin()" class="flex items-center space-x-1.5 bg-brand-cyan/10 border border-brand-cyan/30 text-brand-cyan px-3.5 py-1.5 rounded-full font-semibold hover:bg-brand-cyan/20 transition cursor-pointer">
+                    <i class="fa-brands fa-google"></i> <span class="hidden sm:inline">Google Login</span>
+                </button>
             `;
         }
     }
@@ -95,6 +123,11 @@ function initializeAppUI() {
         const adminLink = document.getElementById('adminPanelLink');
         if (adminLink) adminLink.classList.remove('hidden');
     }
+}
+
+function triggerGoogleLogin() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider).catch(err => alert(sanitizeHTML(err.message)));
 }
 
 function setupNavigation() {
@@ -305,7 +338,7 @@ function setupSearchEngine() {
     });
 }
 
-// --- FRIEND & SUBSCRIBER SEARCH ENGINE (Subscribe & Message Action) ---
+// --- FRIEND & SUBSCRIBER SEARCH ENGINE ---
 function setupFriendSearchEngine() {
     const friendSearchInput = document.getElementById('friendSearchInput');
     if (!friendSearchInput) return;
@@ -327,7 +360,7 @@ function setupFriendSearchEngine() {
         }
 
         filteredUsers.forEach(user => {
-            const isSubbed = localStorage.getItem(`subscribed_${currentUser.email}_${user.email}`);
+            const isSubbed = currentUser && localStorage.getItem(`subscribed_${currentUser.email}_${user.email}`);
             const card = document.createElement('div');
             card.className = 'bg-dark-800 border border-dark-700 p-3.5 rounded-2xl flex items-center justify-between shadow';
             card.innerHTML = `
@@ -353,8 +386,8 @@ function setupFriendSearchEngine() {
 }
 
 window.toggleSubscribeUser = function(creatorEmail, btnElement) {
-    if (!currentUser || currentUser.email === 'guest@zynqra.com') {
-        alert('Please login to subscribe!');
+    if (!currentUser) {
+        alert('Please login with Google to subscribe!');
         return;
     }
     const subKey = `subscribed_${currentUser.email}_${creatorEmail}`;
@@ -444,7 +477,7 @@ function loadHomeShortsCarousel(videos) {
     });
 }
 
-// --- SHORTS PLAYER (Professional, Large Buttons, Fully Working Likes, Comments & Share) ---
+// --- SHORTS PLAYER ---
 function loadShortsFeed() {
     db.collection("videos").where("aspectRatio", "==", "9:16").onSnapshot((snapshot) => {
         const container = document.getElementById('shortsPlayerContainer');
@@ -476,7 +509,7 @@ function loadShortsFeed() {
                     </div>
                 </div>
                 <div class="absolute right-3 bottom-20 flex flex-col items-center space-y-5 pointer-events-auto">
-                    <button onclick="likeShort('${short.id}', ${short.likes || 0})" class="bg-dark-800/90 hover:bg-dark-700 text-white w-12 h-12 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90"><i class="fa-solid fa-heart text-brand-red text-base"></i><span class="text-[9px] font-bold mt-0.5">${short.likes || 0}</span></button>
+                    <button onclick="likeShort('${sanitizeHTML(short.id)}', ${short.likes || 0})" class="bg-dark-800/90 hover:bg-dark-700 text-white w-12 h-12 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90"><i class="fa-solid fa-heart text-brand-red text-base"></i><span class="text-[9px] font-bold mt-0.5">${short.likes || 0}</span></button>
                     <button onclick="openVideoModal(${JSON.stringify(short).replace(/"/g, '&quot;')})" class="bg-dark-800/90 hover:bg-dark-700 text-white w-12 h-12 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90"><i class="fa-solid fa-comment text-brand-cyan text-base"></i><span class="text-[9px] font-bold mt-0.5">${(short.comments || []).length}</span></button>
                     <button onclick="navigator.clipboard.writeText(window.location.href); alert('Short link copied to clipboard!');" class="bg-dark-800/90 hover:bg-dark-700 text-white w-12 h-12 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90"><i class="fa-solid fa-share text-emerald-400 text-base"></i><span class="text-[9px] font-bold mt-0.5">Share</span></button>
                 </div>
@@ -489,8 +522,8 @@ function loadShortsFeed() {
 }
 
 function likeShort(id, currentLikes) {
-    if (!currentUser || currentUser.email === 'guest@zynqra.com') {
-        alert('Please login to like shorts!');
+    if (!currentUser) {
+        alert('Please login with Google to like shorts!');
         return;
     }
     const likeKey = `short_liked_${currentUser.email}_${id}`;
@@ -506,7 +539,7 @@ function likeShort(id, currentLikes) {
     });
 }
 
-// --- EXTERNAL PUBLIC PROFILE VIEW (With Subscribe & Message Buttons & Videos) ---
+// --- EXTERNAL PUBLIC PROFILE VIEW ---
 function openExternalProfile(email) {
     db.collection("users").doc(email).get().then((doc) => {
         if (!doc.exists) {
@@ -528,7 +561,7 @@ function openExternalProfile(email) {
             subBtn.innerText = isSubbed ? 'Subscribed ✓' : 'Subscribe';
             subBtn.className = isSubbed ? 'bg-dark-700 text-gray-300 font-bold px-4 py-2 rounded-2xl text-xs cursor-default shadow' : 'bg-white text-dark-900 font-bold px-4 py-2 rounded-2xl text-xs hover:bg-gray-200 transition cursor-pointer shadow';
             subBtn.onclick = () => {
-                if (!currentUser || currentUser.email === 'guest@zynqra.com') {
+                if (!currentUser) {
                     alert('Please login to subscribe!');
                     return;
                 }
@@ -574,7 +607,7 @@ function openExternalProfile(email) {
     });
 }
 
-// --- VIDEO MODAL, ADMIN GLOBAL ADS & ADMOB INTEGRATION ---
+// --- VIDEO MODAL & GLOBAL ADS ---
 function openVideoModal(video) {
     activeVideo = video;
     const modal = document.getElementById('videoModal');
@@ -601,10 +634,9 @@ function openVideoModal(video) {
     renderRelatedVideos(video);
     modal.classList.remove('hidden');
 
-    // Check for Admin Global Ads / AdMob Campaign
     db.collection("global_ads").get().then((adSnap) => {
         if (!adSnap.empty) {
-            const adData = adSnap.docs[0].data(); // Fetch active global ad
+            const adData = adSnap.docs[0].data();
             adOverlay.classList.remove('hidden');
             let timeLeft = 5;
             const timerText = document.getElementById('adTimerText');
@@ -647,8 +679,8 @@ function openVideoModal(video) {
 
     const likeBtn = document.getElementById('modalLikeBtn');
     likeBtn.onclick = () => {
-        if (!currentUser || currentUser.email === 'guest@zynqra.com') {
-            alert('Please login to like videos!');
+        if (!currentUser) {
+            alert('Please login with Google to like videos!');
             return;
         }
         const userLikeKey = `liked_${currentUser.email}_${video.id}`;
@@ -667,7 +699,7 @@ function openVideoModal(video) {
 
     const subscribeBtn = document.getElementById('modalSubscribeBtn');
     subscribeBtn.onclick = () => {
-        if (!currentUser || currentUser.email === 'guest@zynqra.com') {
+        if (!currentUser) {
             alert('Please login to subscribe!');
             return;
         }
@@ -738,7 +770,7 @@ function renderRelatedVideos(currentVideo) {
     });
 }
 
-// --- MESSENGER CHAT (Sender: Right Side Green, Receiver: Left Side Dark) ---
+// --- MESSENGER CHAT (Direct Profile to Chat Fix) ---
 function loadFriendsList() {
     db.collection("users").get().then((snapshot) => {
         const container = document.getElementById('friendsListContainer');
@@ -750,7 +782,7 @@ function loadFriendsList() {
 
         users.forEach(user => {
             if (currentUser && user.email === currentUser.email) return;
-            const isSubbed = localStorage.getItem(`subscribed_${currentUser.email}_${user.email}`);
+            const isSubbed = currentUser && localStorage.getItem(`subscribed_${currentUser.email}_${user.email}`);
             const card = document.createElement('div');
             card.className = 'bg-dark-800 border border-dark-700 p-3.5 rounded-2xl flex items-center justify-between shadow';
             card.innerHTML = `
@@ -839,7 +871,6 @@ function renderChatMessages() {
             const msg = doc.data();
             const isMe = msg.sender === currentUser.email;
             const msgDiv = document.createElement('div');
-            // প্রেরক (Sender) ডান পাশে সবুজ, প্রাপক (Receiver) বাম পাশে ডার্ক গ্রে
             msgDiv.className = `flex ${isMe ? 'justify-end' : 'justify-start'} my-1.5`;
             msgDiv.innerHTML = `
                 <div class="max-w-[75%] px-4 py-2.5 rounded-2xl text-xs shadow-md ${isMe ? 'bg-[#005c4b] text-white rounded-tr-none' : 'bg-[#202c33] text-gray-100 rounded-tl-none'}">
@@ -880,25 +911,12 @@ function setupProfileEditModal() {
 
     if (openBtn && modal) {
         openBtn.onclick = () => {
+            if (!currentUser) {
+                alert('Please login first.');
+                return;
+            }
             document.getElementById('editNameInput').value = currentUser.name || '';
             document.getElementById('editBioInput').value = currentUser.bio || '';
-            
-            const lastUpdate = currentUser.lastProfileUpdate || 0;
-            const twoMonthsInMillis = 60 * 24 * 60 * 60 * 1000;
-            const now = Date.now();
-            const warningEl = document.getElementById('nameChangeWarning');
-            const nameInput = document.getElementById('editNameInput');
-
-            if (now - lastUpdate < twoMonthsInMillis && lastUpdate !== 0) {
-                nameInput.disabled = true;
-                nameInput.classList.add('opacity-50', 'cursor-not-allowed');
-                warningEl.classList.remove('hidden');
-            } else {
-                nameInput.disabled = false;
-                nameInput.classList.remove('opacity-50', 'cursor-not-allowed');
-                warningEl.classList.add('hidden');
-            }
-
             modal.classList.remove('hidden');
         };
     }
@@ -909,6 +927,7 @@ function setupProfileEditModal() {
 
     if (saveBtn) {
         saveBtn.onclick = async () => {
+            if (!currentUser) return;
             const newName = sanitizeHTML(document.getElementById('editNameInput').value.trim());
             const newBio = sanitizeHTML(document.getElementById('editBioInput').value.trim());
             const imageFile = document.getElementById('profileImageFile').files[0];
@@ -931,20 +950,11 @@ function setupProfileEditModal() {
                 if (resData.secure_url) avatarUrl = resData.secure_url;
             }
 
-            const nameInput = document.getElementById('editNameInput');
-            let updateData = { bio: newBio, avatar: avatarUrl };
-
-            if (!nameInput.disabled && newName && newName !== currentUser.name) {
-                updateData.name = newName;
-                updateData.lastProfileUpdate = Date.now();
-                currentUser.name = newName;
-                currentUser.lastProfileUpdate = updateData.lastProfileUpdate;
-            }
-
+            currentUser.name = newName || currentUser.name;
             currentUser.bio = newBio;
             currentUser.avatar = avatarUrl;
 
-            await db.collection("users").doc(currentUser.email).set(updateData, { merge: true });
+            await db.collection("users").doc(currentUser.email).set(currentUser, { merge: true });
             
             alert('Profile updated successfully!');
             modal.classList.add('hidden');
@@ -1015,6 +1025,10 @@ function setupEventListeners() {
     if (uploadForm) {
         uploadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (!currentUser) {
+                alert('Please login with Google to upload videos!');
+                return;
+            }
             const title = sanitizeHTML(document.getElementById('videoTitle').value);
             const category = sanitizeHTML(document.getElementById('videoCategory').value);
             const aspectRatio = sanitizeHTML(document.getElementById('videoAspectRatio').value);
@@ -1095,7 +1109,7 @@ function setupEventListeners() {
                 uploadForm.reset();
                 switchPage('home');
             } catch (error) {
-                alert('Upload Error: ' + error.message);
+                alert('Upload Error: ' + sanitizeHTML(error.message));
             } finally {
                 if (submitBtn) {
                     submitBtn.disabled = false;
@@ -1132,6 +1146,10 @@ function setupEventListeners() {
     if (monetForm) {
         monetForm.addEventListener('submit', (e) => {
             e.preventDefault();
+            if (!currentUser) {
+                alert('Please login first.');
+                return;
+            }
             const channelName = sanitizeHTML(document.getElementById('monetChannelName').value);
             const email = sanitizeHTML(document.getElementById('monetEmail').value);
             const payoutMethod = sanitizeHTML(document.getElementById('payoutMethodSelect').value);
@@ -1184,7 +1202,7 @@ function setupEventListeners() {
             const text = sanitizeHTML(commentInput.value.trim());
             if (!text || !activeVideo) return;
 
-            const newComment = { user: currentUser.name, text: text, date: new Date().toISOString().split('T')[0] };
+            const newComment = { user: currentUser ? currentUser.name : 'Guest', text: text, date: new Date().toISOString().split('T')[0] };
             const updatedComments = activeVideo.comments ? [...activeVideo.comments, newComment] : [newComment];
 
             db.collection("videos").doc(activeVideo.id).update({ comments: updatedComments }).then(() => {
