@@ -17,7 +17,7 @@ if (!firebase.apps.length) {
 }
 const db = firebase.firestore();
 
-// আপনার নির্দিষ্ট মাস্টার অ্যাডমিন জিমেইল (সিকিউরড অ্যাকাউন্ট)
+// নির্ধারিত মাস্টার অ্যাডমিন জিমেইল (আপনার সিকিউরড অ্যাকাউন্ট)
 const ADMIN_EMAIL = "sadhinahmed718@gmail.com";
 
 // --- Advanced XSS Protection Utility ---
