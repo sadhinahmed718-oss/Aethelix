@@ -17,6 +17,8 @@
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: #0b0b0b; }
         ::-webkit-scrollbar-thumb { background: #333333; border-radius: 2px; }
+        .hub-card { transition: all 0.2s ease-in-out; }
+        .hub-card:hover { border-color: rgba(239, 68, 68, 0.4); }
     </style>
 </head>
 <body class="bg-[#0b0b0b] text-gray-100 min-h-screen text-xs">
@@ -30,7 +32,6 @@
             <h2 class="text-xs font-bold text-white">Master Admin Portal</h2>
             <p id="adminGuardStatus" class="text-[11px] text-gray-400">Sign in with authorized Admin Google Account.</p>
             
-            <!-- গুগল লগইন বাটন -->
             <button id="adminGoogleLoginBtn" class="w-full bg-red-600 text-white py-2.5 rounded-2xl font-bold hover:bg-red-500 transition text-xs cursor-pointer flex items-center justify-center space-x-2">
                 <i class="fa-brands fa-google"></i> <span>Login with Admin Google</span>
             </button>
@@ -41,18 +42,25 @@
 
     <!-- Admin Dashboard Main Container -->
     <div id="adminDashboard" class="hidden min-h-screen flex flex-col">
-        <header class="bg-[#121212] border-b border-[#222222] px-6 py-3.5 flex items-center justify-between">
+        <header class="bg-[#121212] border-b border-[#222222] px-6 py-3.5 flex items-center justify-between sticky top-0 z-40">
             <div class="flex items-center space-x-3">
                 <span class="bg-red-600 text-white px-2.5 py-0.5 rounded font-black text-[9px]">MASTER ADMIN</span>
-                <h1 class="font-bold text-white text-xs">Zynqra Ultimate Command Center</h1>
+                <h1 class="font-bold text-white text-xs">Zynqra Command Center</h1>
             </div>
+            
+            <!-- Real-time Live Security & NSFW Notification Ticker -->
+            <div id="adminNotificationTicker" class="hidden items-center space-x-2 bg-red-500/10 border border-red-500/40 px-3 py-1 rounded-full animate-pulse cursor-pointer">
+                <i class="fa-solid fa-triangle-exclamation text-red-500 text-[10px]"></i>
+                <span id="tickerAlertText" class="text-red-400 text-[10px] font-bold">NSFW Content Flagged! Click to Review</span>
+            </div>
+
             <div class="flex items-center space-x-3">
-                <span class="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-full"><i class="fa-solid fa-circle text-[8px] mr-1"></i> Live Secure Node</span>
+                <span class="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-full"><i class="fa-solid fa-circle text-[8px] mr-1"></i> Secure Node Active</span>
                 <a href="index.html" class="bg-[#1f1f1f] hover:bg-[#272727] px-4 py-1.5 rounded-xl font-semibold text-gray-300 transition">Back to App</a>
             </div>
         </header>
 
-        <main class="flex-1 p-6 max-w-7xl mx-auto w-full space-y-5">
+        <main class="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6">
             <!-- Stats Overview Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div class="bg-[#121212] border border-[#222222] p-4.5 rounded-2xl shadow-lg">
@@ -65,7 +73,7 @@
                 </div>
                 <div class="bg-[#121212] border border-[#222222] p-4.5 rounded-2xl shadow-lg">
                     <div class="text-[11px] text-gray-400 mb-1">Active Ad Campaigns</div>
-                    <div id="adminActiveAdsCount" class="text-xl font-bold text-brand-cyan">0</div>
+                    <div id="adminActiveAdsCount" class="text-xl font-bold text-cyan-400">0</div>
                 </div>
                 <div class="bg-[#121212] border border-[#222222] p-4.5 rounded-2xl shadow-lg">
                     <div class="text-[11px] text-gray-400 mb-1">AI Flagged / Queue</div>
@@ -73,25 +81,51 @@
                 </div>
             </div>
 
-            <!-- Global Ads & Sponsor Management Hub -->
-            <div class="bg-[#121212] border border-cyan-500/30 rounded-2xl p-5 space-y-4 shadow-xl">
+            <!-- Command Hub Navigation Grid (Modular Boxes for Scalability) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <button onclick="switchAdminTab('ads')" class="hub-card bg-[#121212] border border-[#222] p-4 rounded-2xl text-left cursor-pointer hover:bg-[#161616]">
+                    <div class="w-8 h-8 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center mb-3"><i class="fa-solid fa-rectangle-ad"></i></div>
+                    <h3 class="font-bold text-white text-xs">Global Ads & Sponsors</h3>
+                    <p class="text-[10px] text-gray-400 mt-1">Manage video & banner ad campaigns.</p>
+                </button>
+                <button onclick="switchAdminTab('monetization')" class="hub-card bg-[#121212] border border-[#222] p-4 rounded-2xl text-left cursor-pointer hover:bg-[#161616]">
+                    <div class="w-8 h-8 rounded-xl bg-yellow-500/10 text-yellow-400 flex items-center justify-center mb-3"><i class="fa-solid fa-sack-dollar"></i></div>
+                    <h3 class="font-bold text-white text-xs">Monetization & Payouts</h3>
+                    <p class="text-[10px] text-gray-400 mt-1">Configure CPM rates & creator payouts.</p>
+                </button>
+                <button onclick="switchAdminTab('moderation')" class="hub-card bg-[#121212] border border-[#222] p-4 rounded-2xl text-left cursor-pointer hover:bg-[#161616]">
+                    <div class="w-8 h-8 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center mb-3"><i class="fa-solid fa-shield-halved"></i></div>
+                    <h3 class="font-bold text-white text-xs">AI Security & NSFW Queue</h3>
+                    <p class="text-[10px] text-gray-400 mt-1">Review flagged explicit content & ban.</p>
+                </button>
+                <button onclick="switchAdminTab('users')" class="hub-card bg-[#121212] border border-[#222] p-4 rounded-2xl text-left cursor-pointer hover:bg-[#161616]">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-3"><i class="fa-solid fa-users-gear"></i></div>
+                    <h3 class="font-bold text-white text-xs">User Control & Inspection</h3>
+                    <p class="text-[10px] text-gray-400 mt-1">Inspect profiles, activities & bans.</p>
+                </button>
+            </div>
+
+            <!-- Hub Sections Container -->
+
+            <!-- 1. Global Ads Hub -->
+            <div id="section-ads" class="admin-section bg-[#121212] border border-cyan-500/30 rounded-2xl p-5 space-y-4 shadow-xl">
                 <div class="flex items-center justify-between border-b border-[#222] pb-3">
-                    <h2 class="font-bold text-white text-xs flex items-center"><i class="fa-solid fa-rectangle-ad text-cyan-400 mr-2"></i> Global Ads & Sponsor Campaign Manager (YouTube/AdMob 16:9 & Shorts Rewarded)</h2>
-                    <span class="text-[10px] text-cyan-400 bg-cyan-500/10 px-3 py-1 rounded-full font-semibold">Monetization & Promotion Control</span>
+                    <h2 class="font-bold text-white text-xs flex items-center"><i class="fa-solid fa-rectangle-ad text-cyan-400 mr-2"></i> Global Ads & Sponsor Campaign Manager</h2>
+                    <span class="text-[10px] text-cyan-400 bg-cyan-500/10 px-3 py-1 rounded-full font-semibold">AdMob 16:9 & Shorts</span>
                 </div>
                 <form id="adminAdForm" class="grid grid-cols-1 sm:grid-cols-4 gap-3">
                     <input type="text" id="adTitle" placeholder="Sponsor / Ad Title" required class="bg-[#181818] border border-[#333] rounded-xl px-3 py-2 text-white outline-none text-xs">
                     <input type="url" id="adVideoUrl" placeholder="Ad Video MP4 Link" required class="bg-[#181818] border border-[#333] rounded-xl px-3 py-2 text-white outline-none text-xs">
                     <input type="url" id="adTargetUrl" placeholder="Target Redirect URL" required class="bg-[#181818] border border-[#333] rounded-xl px-3 py-2 text-white outline-none text-xs">
-                    <button type="submit" class="bg-cyan-400 text-dark-900 font-bold py-2 rounded-xl hover:bg-cyan-300 transition cursor-pointer text-xs">Deploy Global Ad</button>
+                    <button type="submit" class="bg-cyan-400 text-black font-bold py-2 rounded-xl hover:bg-cyan-300 transition cursor-pointer text-xs">Deploy Global Ad</button>
                 </form>
                 <div id="adminActiveAdsList" class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2"></div>
             </div>
 
-            <!-- Monetization & Monthly Payout / Views Management Hub -->
-            <div class="bg-[#121212] border border-[#222222] rounded-2xl p-4.5 space-y-3 shadow-lg">
+            <!-- 2. Monetization Hub -->
+            <div id="section-monetization" class="admin-section hidden bg-[#121212] border border-yellow-500/30 rounded-2xl p-5 space-y-4 shadow-xl">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#222] pb-3">
-                    <h2 class="font-bold text-white text-xs flex items-center"><i class="fa-solid fa-sack-dollar text-yellow-400 mr-2"></i> Monthly Views & Payout Management</h2>
+                    <h2 class="font-bold text-white text-xs flex items-center"><i class="fa-solid fa-sack-dollar text-yellow-400 mr-2"></i> Monthly Views & Payout Management Hub</h2>
                     <div class="flex items-center space-x-2 bg-[#181818] px-3 py-1.5 rounded-xl border border-[#333]">
                         <span class="text-gray-400 text-[10px]">Global CPM Rate (Per 1K Views):</span>
                         <input type="number" id="globalCpmInput" value="10" class="w-12 bg-[#222] text-white text-center rounded px-1 py-0.5 text-xs outline-none font-bold">
@@ -103,20 +137,26 @@
                 </div>
             </div>
 
-            <!-- AI Video Moderation & Copyright Check Queue -->
-            <div class="bg-[#121212] border border-[#222222] rounded-2xl p-4.5 space-y-3 shadow-lg">
-                <h2 class="font-bold text-white text-xs flex items-center"><i class="fa-solid fa-shield-halved text-cyan-400 mr-2"></i> AI Video Moderation & Copyright Check Queue</h2>
+            <!-- 3. AI Security & NSFW Queue Hub -->
+            <div id="section-moderation" class="admin-section hidden bg-[#121212] border border-red-500/30 rounded-2xl p-5 space-y-4 shadow-xl">
+                <div class="flex items-center justify-between border-b border-[#222] pb-3">
+                    <h2 class="font-bold text-white text-xs flex items-center"><i class="fa-solid fa-shield-halved text-red-500 mr-2"></i> AI Video Moderation & NSFW/Porn Alert Queue</h2>
+                    <span class="text-[10px] text-red-400 bg-red-500/10 px-3 py-1 rounded-full font-semibold">Instant Action Center</span>
+                </div>
                 <div id="adminModerationQueueList" class="space-y-2">
-                    <p class="text-[11px] text-gray-500">All uploaded videos are verified.</p>
+                    <p class="text-[11px] text-gray-500">All uploaded videos are verified and secure.</p>
                 </div>
             </div>
 
-            <!-- User Management, Live Monitoring & Ban Control Table -->
-            <div class="bg-[#121212] border border-[#222222] rounded-2xl p-4.5 space-y-3 shadow-lg">
-                <h2 class="font-bold text-white text-xs flex items-center"><i class="fa-solid fa-users-gear text-red-400 mr-2"></i> User Management, Live Monitoring & Ban Control</h2>
-                <div class="overflow-x-auto">
+            <!-- 4. User Control & Inspection Hub -->
+            <div id="section-users" class="admin-section hidden bg-[#121212] border border-emerald-500/30 rounded-2xl p-5 space-y-4 shadow-xl">
+                <div class="flex items-center justify-between border-b border-[#222] pb-3">
+                    <h2 class="font-bold text-white text-xs flex items-center"><i class="fa-solid fa-users-gear text-emerald-400 mr-2"></i> User Management, Live Monitoring & Ban Control</h2>
+                    <input type="text" id="adminUserSearch" placeholder="Search user by email/name..." class="bg-[#181818] border border-[#333] rounded-xl px-3 py-1 text-white outline-none text-[11px] w-48">
+                </div>
+                <div class="overflow-x-auto max-h-[60vh]">
                     <table class="w-full text-left text-gray-300 text-[11px]">
-                        <thead class="bg-[#181818] text-gray-400 uppercase text-[9px]">
+                        <thead class="bg-[#181818] text-gray-400 uppercase text-[9px] sticky top-0">
                             <tr>
                                 <th class="p-3">User Profile</th>
                                 <th class="p-3">Email & Payout Info</th>
@@ -144,7 +184,16 @@
         </div>
     </div>
 
-    <!-- Admin JavaScript Logic -->
+    <!-- Tab Switching & XSS Protection Script helper -->
+    <script>
+        function switchAdminTab(tabName) {
+            document.querySelectorAll('.admin-section').forEach(el => el.classList.add('hidden'));
+            const target = document.getElementById('section-' + tabName);
+            if(target) target.classList.remove('hidden');
+        }
+    </script>
+    
+    <!-- Admin JavaScript Logic Module -->
     <script type="module" src="admin.js"></script>
 </body>
-    </html>
+                </html>
