@@ -10,7 +10,7 @@ const firebaseConfig = {
     measurementId: "G-R4TFWEMJ3T"
 };
 
-// Initialize Firebase
+// Initialize Firebase securely
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
@@ -90,7 +90,7 @@ function setupFirebaseAuthState() {
     });
 }
 
-// --- Google Authentication ---
+// --- Google Authentication & Logout ---
 function setupGoogleAuth() {
     const loginBtn = document.getElementById('googleLoginBtn');
     if (loginBtn) {
@@ -103,6 +103,16 @@ function setupGoogleAuth() {
             });
         };
     }
+
+    const logoutBtn = document.getElementById('logoutSidebarBtn');
+    if (logoutBtn) {
+        logoutBtn.onclick = () => {
+            auth.signOut().then(() => {
+                alert('Logged out successfully!');
+                window.location.reload();
+            });
+        };
+    }
 }
 
 // --- UI INITIALIZATION & NAVIGATION ---
@@ -112,7 +122,7 @@ function initializeAppUI() {
         if (currentUser) {
             authContainer.innerHTML = `
                 <div id="userProfileHeader" class="flex items-center space-x-2 cursor-pointer relative" onclick="switchPage('profile')">
-                    <img src="${sanitizeHTML(currentUser.avatar)}" alt="Profile" class="w-8 h-8 rounded-full object-cover border border-brand-cyan shadow-sm">
+                    <img src="${sanitizeHTML(currentUser.avatar)}" alt="Profile" class="w-8 h-8 rounded-full object-cover border border-brand-cyan shadow-sm" title="${sanitizeHTML(currentUser.name)}">
                 </div>
             `;
         } else {
@@ -157,6 +167,18 @@ function setupNavigation() {
             switchPage('home');
         });
     }
+
+    // Shorts shortcut button next to Zynqra logo
+    const headerShortsBtn = document.getElementById('headerShortsBtn');
+    if (headerShortsBtn) {
+        headerShortsBtn.onclick = () => switchPage('shorts');
+    }
+
+    // Messenger shortcut next to notification bell
+    const headerMessengerBtn = document.getElementById('headerMessengerBtn');
+    if (headerMessengerBtn) {
+        headerMessengerBtn.onclick = () => switchPage('messenger');
+    }
 }
 
 function switchPage(pageId) {
@@ -186,7 +208,6 @@ function loadHomeFeed(category = 'all') {
         let videos = [];
         snapshot.forEach(doc => videos.push({ id: doc.id, ...doc.data() }));
         
-        // Dynamic sorting algorithm: User's own or recently uploaded/trending videos appear first
         videos.sort((a, b) => (b.views || 0) - (a.views || 0) || new Date(b.date) - new Date(a.date));
         globalAllVideos = videos;
 
@@ -212,7 +233,7 @@ function loadHomeFeed(category = 'all') {
             card.innerHTML = `
                 <div class="relative aspect-video bg-black overflow-hidden">
                     ${thumbContent}
-                    <span class="absolute bottom-2 right-2 bg-black/80 text-white text-[9px] px-2 py-0.5 rounded-md font-bold">${sanitizeHTML(video.aspectRatio)}</span>
+                    <span class="absolute bottom-2 right-2 bg-black/80 text-white text-[9px] px-2 py-0.5 rounded-md font-bold">${sanitizeHTML(video.aspectRatio || '16:9')}</span>
                 </div>
                 <div class="p-3.5 flex space-x-3 flex-1">
                     <img src="${sanitizeHTML(video.creatorAvatar)}" class="w-8 h-8 rounded-full object-cover border border-dark-600">
@@ -233,7 +254,6 @@ function loadHomeFeed(category = 'all') {
     });
 }
 
-// --- NUMBER FORMATTER ---
 function formatNumber(num) {
     if (num >= 1000000000) return (num / 1000000000).toFixed(1) + 'B';
     if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
@@ -353,7 +373,7 @@ function setupSearchEngine() {
     });
 }
 
-// --- CREATOR & VIEWS DIRECTORY SEARCH ENGINE ---
+// --- CREATOR & PROFILE VIEWS DIRECTORY SEARCH ENGINE ---
 function setupFriendSearchEngine() {
     const friendSearchInput = document.getElementById('friendSearchInput');
     if (!friendSearchInput) return;
@@ -498,7 +518,7 @@ function loadHomeShortsCarousel(videos) {
     });
 }
 
-// --- SHORTS PLAYER (9:16 Vertical, Subs, Profile Navigation, Comments & Heart ❤️ Likes) ---
+// --- SHORTS PLAYER ---
 function loadShortsFeed() {
     db.collection("videos").where("aspectRatio", "==", "9:16").onSnapshot((snapshot) => {
         const container = document.getElementById('shortsPlayerContainer');
@@ -538,7 +558,7 @@ function loadShortsFeed() {
                 <div class="absolute right-3 bottom-20 flex flex-col items-center space-y-4 pointer-events-auto">
                     <button onclick="likeShort('${sanitizeHTML(short.id)}', ${short.likes || 0})" class="bg-dark-800/90 hover:bg-dark-700 text-white w-12 h-12 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90"><i class="fa-solid fa-heart text-brand-red text-base"></i><span class="text-[9px] font-bold mt-0.5">${formatNumber(short.likes || 0)}</span></button>
                     <button onclick="openShortsCommentsModal('${sanitizeHTML(short.id)}')" class="bg-dark-800/90 hover:bg-dark-700 text-white w-12 h-12 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90"><i class="fa-solid fa-comment text-brand-cyan text-base"></i><span class="text-[9px] font-bold mt-0.5">${formatNumber((short.comments || []).length)}</span></button>
-                    <button onclick="navigator.clipboard.writeText(window.location.href); alert('Short link copied to clipboard!');" class="bg-dark-800/90 hover:bg-dark-700 text-white w-12 h-12 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90"><i class="fa-solid fa-share text-emerald-400 text-base"></i><span class="text-[9px] font-bold mt-0.5">Share</span></button>
+                    <button onclick="navigator.clipboard.writeText(window.location.origin + window.location.pathname + '?v=' + '${sanitizeHTML(short.id)}'); alert('Unique Short share link copied to clipboard!');" class="bg-dark-800/90 hover:bg-dark-700 text-white w-12 h-12 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90"><i class="fa-solid fa-share text-emerald-400 text-base"></i><span class="text-[9px] font-bold mt-0.5">Share</span></button>
                     
                     <div class="relative">
                         <button onclick="toggleShortsSettingsMenu('${sanitizeHTML(short.id)}')" class="bg-dark-800/90 hover:bg-dark-700 text-white w-12 h-12 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition"><i class="fa-solid fa-ellipsis-vertical text-gray-300 text-base"></i><span class="text-[8px] font-bold mt-0.5">Settings</span></button>
@@ -600,7 +620,6 @@ window.likeShort = function(id, currentLikes) {
     });
 };
 
-// --- SHORTS COMMENTS BOTTOM SHEET WITH ❤️ LOVE LIKES ---
 let activeShortCommentId = null;
 
 window.openShortsCommentsModal = function(id) {
@@ -663,7 +682,7 @@ window.creatorLoveShortComment = function(videoId, commentIndex) {
     db.collection("videos").doc(videoId).get().then(doc => {
         if (!doc.exists) return;
         let comments = doc.data().comments || [];
-        comments[commentIndex].hearts = (comments[commentIndex].hearts || 0) + 5; // Creator heart carries more weight/likes
+        comments[commentIndex].hearts = (comments[commentIndex].hearts || 0) + 5;
         db.collection("videos").doc(videoId).update({ comments: comments }).then(() => {
             alert('Creator heart added to comment!');
             renderShortsComments(videoId);
@@ -671,7 +690,7 @@ window.creatorLoveShortComment = function(videoId, commentIndex) {
     });
 };
 
-// --- EXTERNAL PUBLIC PROFILE VIEW & VIDEO COUNT ---
+// --- EXTERNAL PUBLIC PROFILE VIEW & BOX VIDEO GRID ---
 function openExternalProfile(email) {
     db.collection("users").doc(email).get().then((doc) => {
         if (!doc.exists) {
@@ -738,7 +757,7 @@ function openExternalProfile(email) {
     });
 }
 
-// --- VIDEO MODAL, ANTI-BOT VIEW COUNTING & ADMOB SKIPPABLE ADS ---
+// --- VIDEO MODAL, UNIQUE SHARE LINK API & ADMOB ADS ---
 function openVideoModal(video) {
     activeVideo = video;
     const modal = document.getElementById('videoModal');
@@ -767,17 +786,27 @@ function openVideoModal(video) {
         };
     }
 
+    // Unique Video Share Link API Button handler
+    const shareBtn = document.getElementById('modalShareBtn');
+    if (shareBtn) {
+        shareBtn.onclick = () => {
+            const uniqueVideoLink = window.location.origin + window.location.pathname + '?v=' + video.id;
+            navigator.clipboard.writeText(uniqueVideoLink).then(() => {
+                alert('Unique Video Share Link copied to clipboard!\n' + uniqueVideoLink);
+            });
+        };
+    }
+
     player.src = video.videoUrl;
     renderComments(video);
     renderRelatedVideos(video);
     modal.classList.remove('hidden');
 
-    // Anti-Bot View Protection & AdMob Rewarded/Skippable Ad System (16:9 Aspect Ratio)
     db.collection("global_ads").get().then((adSnap) => {
         if (!adSnap.empty) {
             const adData = adSnap.docs[0].data();
             adOverlay.classList.remove('hidden');
-            let timeLeft = 5; // 5 seconds skippable ad
+            let timeLeft = 5;
             const timerText = document.getElementById('adTimerText');
             const skipBtn = document.getElementById('skipAdBtn');
             skipBtn.disabled = true;
@@ -842,13 +871,11 @@ function openVideoModal(video) {
     }
 }
 
-// --- Anti-Bot Secure View Incrementer ---
 function processSecureVideoView(video) {
     const viewSessionKey = `viewed_session_${video.id}`;
     const lastViewTime = localStorage.getItem(`last_view_${video.id}`);
     const now = Date.now();
 
-    // Anti-bot check: prevent rapid reloading views within 30 seconds from same browser session
     if (!sessionStorage.getItem(viewSessionKey) && (!lastViewTime || (now - lastViewTime > 30000))) {
         sessionStorage.setItem(viewSessionKey, 'true');
         localStorage.setItem(`last_view_${video.id}`, now);
@@ -856,7 +883,6 @@ function processSecureVideoView(video) {
         const newViews = (video.views || 0) + 1;
         db.collection("videos").doc(video.id).update({ views: newViews });
 
-        // Update creator total views accumulator
         db.collection("users").doc(video.creatorEmail).get().then(doc => {
             if (doc.exists) {
                 let currentTotalViews = doc.data().totalViews || 0;
@@ -914,7 +940,7 @@ function renderRelatedVideos(currentVideo) {
     });
 }
 
-// --- MESSENGER CHAT (Unread Notification Badge & Sender Order) ---
+// --- MESSENGER CHAT (Targeted Notifications & Unread Badge Clearing) ---
 function loadFriendsList() {
     db.collection("users").get().then((snapshot) => {
         const container = document.getElementById('friendsListContainer');
@@ -1045,23 +1071,31 @@ function renderChatMessages() {
 // --- NOTIFICATIONS SYSTEM ---
 function loadNotifications() {
     const notifBadge = document.getElementById('notifBadge');
+    const headerMsgBadge = document.getElementById('headerMsgBadge');
     const sidebarMsgBadge = document.getElementById('sidebarMsgBadge');
     const notificationsBtn = document.getElementById('notificationsBtn');
     if (!notifBadge || !notificationsBtn) return;
 
-    db.collection("notifications").orderBy("date", "desc").onSnapshot((snapshot) => {
-        if (!snapshot.empty) {
-            notifBadge.innerText = snapshot.size;
-            notifBadge.classList.remove('hidden');
-            if (sidebarMsgBadge) {
-                sidebarMsgBadge.innerText = snapshot.size;
-                sidebarMsgBadge.classList.remove('hidden');
+    if (currentUser) {
+        db.collection("notifications").where("recipient", "==", currentUser.email).orderBy("date", "desc").onSnapshot((snapshot) => {
+            if (!snapshot.empty) {
+                notifBadge.innerText = snapshot.size;
+                notifBadge.classList.remove('hidden');
+                if (headerMsgBadge) {
+                    headerMsgBadge.innerText = snapshot.size;
+                    headerMsgBadge.classList.remove('hidden');
+                }
+                if (sidebarMsgBadge) {
+                    sidebarMsgBadge.innerText = snapshot.size;
+                    sidebarMsgBadge.classList.remove('hidden');
+                }
+            } else {
+                notifBadge.classList.add('hidden');
+                if (headerMsgBadge) headerMsgBadge.classList.add('hidden');
+                if (sidebarMsgBadge) sidebarMsgBadge.classList.add('hidden');
             }
-        } else {
-            notifBadge.classList.add('hidden');
-            if (sidebarMsgBadge) sidebarMsgBadge.classList.add('hidden');
-        }
-    });
+        });
+    }
 
     notificationsBtn.onclick = () => {
         switchPage('messenger');
@@ -1185,7 +1219,7 @@ window.deleteUserVideo = async function(id) {
     }
 };
 
-// --- EVENT LISTENERS & CLOUDINARY UPLOAD (Porn / Nudity Moderation Check) ---
+// --- UPLOAD & ANTI-PORN FILTERING CHECKER ---
 function setupEventListeners() {
     const uploadForm = document.getElementById('uploadForm');
     if (uploadForm) {
@@ -1203,7 +1237,8 @@ function setupEventListeners() {
 
             const title = sanitizeHTML(document.getElementById('videoTitle').value);
             const category = sanitizeHTML(document.getElementById('videoCategory').value);
-            const aspectRatio = sanitizeHTML(document.getElementById('videoAspectRatio').value);
+            const uploadTypeChoice = sanitizeHTML(document.getElementById('uploadTypeChoice').value); // video or shorts
+            const aspectRatio = uploadTypeChoice === 'shorts' ? '9:16' : '16:9';
             const desc = sanitizeHTML(document.getElementById('videoDesc').value);
             const videoFile = document.getElementById('videoFile').files[0];
             const thumbFile = document.getElementById('thumbnailFile').files[0];
@@ -1213,12 +1248,11 @@ function setupEventListeners() {
                 return;
             }
 
-            // Keyword content moderation for explicit / pornographic terms in title or description
-            const pornKeywords = ['porn', 'xxx', 'sex', 'naked', 'adult', 'nude'];
+            // Advanced Pornography / Explicit Content Filtering Checker
+            const pornKeywords = ['porn', 'xxx', 'sex', 'naked', 'adult', 'nude', 'porno', 'bdsm', 'erotic'];
             const containsRestrictedContent = pornKeywords.some(keyword => title.toLowerCase().includes(keyword) || desc.toLowerCase().includes(keyword));
 
             if (containsRestrictedContent) {
-                // Apply strike & restrict user profile, notify admin panel
                 let newStrikes = (currentUser.strikes || 0) + 1;
                 let isRestricted = newStrikes >= 2;
                 
@@ -1242,7 +1276,7 @@ function setupEventListeners() {
             const originalBtnText = submitBtn ? submitBtn.innerText : 'Upload';
             if (submitBtn) {
                 submitBtn.disabled = true;
-                submitBtn.innerText = 'Uploading video to Cloudinary... 0%';
+                submitBtn.innerText = 'Uploading video... 0%';
             }
 
             const cloudName = "u078nis6";
@@ -1280,7 +1314,7 @@ function setupEventListeners() {
             }
 
             try {
-                if (submitBtn) submitBtn.innerText = 'Uploading video...';
+                if (submitBtn) submitBtn.innerText = 'Uploading 1080p/4K video...';
                 const videoUrl = await uploadToCloudinary(videoFile, 'video', (pct) => {
                     if (submitBtn) submitBtn.innerText = `Uploading Video: ${pct}%`;
                 });
@@ -1303,7 +1337,7 @@ function setupEventListeners() {
                     date: new Date().toISOString().split('T')[0]
                 });
 
-                alert('Video successfully uploaded and published on Zynqra!');
+                alert('Video (1080p/4K) successfully uploaded and published on Zynqra!');
                 uploadForm.reset();
                 switchPage('home');
             } catch (error) {
@@ -1334,12 +1368,11 @@ function setupEventListeners() {
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            // Increment unread count in local storage for recipient
             const unreadKey = `unread_${activeChatContact.email}_${currentUser.email}`;
             const currentUnread = parseInt(localStorage.getItem(unreadKey) || '0');
             localStorage.setItem(unreadKey, currentUnread + 1);
 
-            // Trigger Notification
+            // Send notification directly to target recipient
             db.collection("notifications").add({
                 recipient: activeChatContact.email,
                 sender: currentUser.name,
@@ -1396,7 +1429,6 @@ function setupEventListeners() {
         };
     }
 
-    // YouTube Style Description Toggle
     const descBox = document.getElementById('videoDescBoxContainer');
     const descText = document.getElementById('modalVideoDescText');
     const descToggle = document.getElementById('descToggleText');
@@ -1411,7 +1443,6 @@ function setupEventListeners() {
         };
     }
 
-    // Shorts Comments Sheet Close
     const closeShortsSheetBtn = document.getElementById('closeShortsSheetBtn');
     const shortsModalSheet = document.getElementById('shortsModalSheet');
     if (closeShortsSheetBtn && shortsModalSheet) {
@@ -1559,4 +1590,4 @@ function loadUserProfile() {
             `;
         });
     });
-    }
+}
