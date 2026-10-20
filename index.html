@@ -36,8 +36,34 @@
         ::-webkit-scrollbar-thumb { background: #333333; border-radius: 2px; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .shorts-container { scroll-snap-type: y mandatory; scroll-behavior: smooth; height: calc(100vh - 100px); }
-        .shorts-slide { scroll-snap-align: start; scroll-snap-stop: always; height: 100%; width: 100%; }
+        
+        /* Professional 9:16 Full Screen & object-fit: cover for Shorts */
+        .shorts-container { scroll-snap-type: y mandatory; scroll-behavior: smooth; height: calc(100vh - 80px); width: 100%; display: flex; flex-direction: column; align-items: center; }
+        .shorts-slide { 
+            scroll-snap-align: start; 
+            scroll-snap-stop: always; 
+            height: 100%; 
+            width: 100%; 
+            aspect-ratio: 9 / 16; 
+            max-width: 450px; 
+            min-height: 100%;
+            background: #000;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        .shorts-slide video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover !important; /* Removes black borders and fills screen completely */
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
         .smooth-transition { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
 </head>
@@ -80,10 +106,15 @@
                 </svg>
                 <span class="font-black text-sm tracking-wider bg-gradient-to-r from-brand-cyan to-brand-red bg-clip-text text-transparent">ZYNQRA</span>
             </a>
-            <!-- Shorts Shortcut Button next to Zynqra logo -->
+            
             <button id="headerShortsBtn" class="bg-dark-800 hover:bg-dark-700 border border-dark-600 text-amber-400 px-3 py-1 rounded-xl text-[11px] font-bold flex items-center space-x-1.5 transition cursor-pointer shadow">
                 <i class="fa-solid fa-bolt"></i>
                 <span>Shorts</span>
+            </button>
+
+            <!-- Quick Upload Button (+) -->
+            <button id="quickUploadHeaderBtn" class="bg-gradient-to-r from-brand-cyan to-brand-red text-dark-900 p-2 rounded-xl text-xs font-black hover:scale-105 transition shadow-lg cursor-pointer flex items-center justify-center w-8 h-8" title="Upload Video or Shorts">
+                <i class="fa-solid fa-plus text-sm"></i>
             </button>
         </div>
 
@@ -97,14 +128,14 @@
         </div>
 
         <div class="flex items-center space-x-2 sm:space-x-3">
-            <!-- Messenger Header Shortcut with notification badge -->
             <button id="headerMessengerBtn" class="relative p-2.5 hover:bg-dark-700/60 rounded-full text-emerald-400 transition cursor-pointer" title="Messenger Chat">
                 <i class="fa-solid fa-message text-base"></i>
                 <span id="headerMsgBadge" class="absolute top-1 right-1 bg-red-500 text-white text-[8px] px-1.5 py-0.2 rounded-full hidden">0</span>
             </button>
             <button id="notificationsBtn" class="relative p-2.5 hover:bg-dark-700/60 rounded-full text-gray-300 transition cursor-pointer"><i class="fa-regular fa-bell text-base"></i><span id="notifBadge" class="absolute top-1 right-1 bg-brand-red text-white text-[8px] px-1.5 py-0.2 rounded-full hidden">0</span></button>
             <div id="authContainer">
-                <button id="googleLoginBtn" class="flex items-center space-x-1.5 bg-brand-cyan/10 border border-brand-cyan/30 text-brand-cyan px-3.5 py-1.5 rounded-full font-semibold hover:bg-brand-cyan/20 transition cursor-pointer">
+                <!-- Google Login Button (Secure & Persistent) -->
+                <button id="googleLoginBtn" class="flex items-center space-x-1.5 bg-brand-cyan/10 border border-brand-cyan/30 text-brand-cyan px-3.5 py-1.5 rounded-full font-semibold hover:bg-brand-cyan/20 transition cursor-pointer shadow">
                     <i class="fa-brands fa-google"></i> <span class="hidden sm:inline">Google Login</span>
                 </button>
             </div>
@@ -141,7 +172,6 @@
             <div class="border-t border-dark-700/80 my-2 pt-2 space-y-1">
                 <a href="https://sadhinahmed718-oss.github.io/Zynqra-privacy-policy/" target="_blank" class="flex items-center space-x-2.5 px-3 py-2.5 rounded-xl hover:bg-dark-700/60 text-gray-400 text-[11px]"><i class="fa-solid fa-shield-halved w-4"></i> <span>Privacy & Terms</span></a>
                 <button id="logoutSidebarBtn" class="w-full text-left flex items-center space-x-2.5 px-3 py-2.5 rounded-xl hover:bg-red-950/40 text-red-400 font-semibold transition cursor-pointer"><i class="fa-solid fa-right-from-bracket w-4"></i> <span>Logout / Sign Out</span></button>
-                <a href="admin.html" id="adminPanelLink" class="hidden flex items-center space-x-2.5 px-3 py-2.5 rounded-xl bg-red-950/40 border border-red-600/30 text-red-400 font-bold mt-1"><i class="fa-solid fa-user-shield w-4"></i> <span>Admin Control</span></a>
             </div>
         </nav>
     </aside>
@@ -166,7 +196,7 @@
                     <div class="flex items-center justify-between mb-3">
                         <div class="flex items-center space-x-2">
                             <i class="fa-solid fa-bolt text-amber-400 text-sm"></i>
-                            <h2 class="text-xs font-bold text-white tracking-wide">Zynqra Shorts Feed (9:16)</h2>
+                            <h2 class="text-xs font-bold text-white tracking-wide">Zynqra Shorts Feed (9:16 Full Screen)</h2>
                         </div>
                         <button id="viewAllShortsBtn" class="bg-dark-700 hover:bg-dark-600 text-brand-cyan px-3.5 py-1.5 rounded-xl text-[10px] font-semibold transition cursor-pointer">Open Shorts Player</button>
                     </div>
@@ -176,10 +206,10 @@
                 <div id="videoGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-12"></div>
             </section>
 
-            <!-- SHORTS DEDICATED PLAYER -->
+            <!-- SHORTS DEDICATED PLAYER (Pure Video without Thumbnail Overlay) -->
             <section id="page-shorts" class="page-view hidden flex flex-col items-center justify-center pb-6">
-                <div id="shortsPlayerContainer" class="shorts-container w-full max-w-sm h-[82vh] bg-black rounded-3xl overflow-y-auto relative shadow-2xl border border-dark-700 hide-scrollbar snap-y snap-mandatory">
-                    <p class="text-gray-400 text-xs text-center mt-32">Loading Zynqra 9:16 Shorts...</p>
+                <div id="shortsPlayerContainer" class="shorts-container w-full max-w-md h-[88vh] bg-black rounded-3xl overflow-y-auto relative shadow-2xl border border-dark-700 hide-scrollbar snap-y snap-mandatory flex flex-col items-center">
+                    <p class="text-gray-400 text-xs text-center mt-32">Loading Zynqra Full Screen Shorts...</p>
                 </div>
             </section>
 
@@ -204,7 +234,7 @@
                         <label class="block font-medium text-gray-300 mb-1">Upload Type Selection</label>
                         <select id="uploadTypeChoice" class="w-full bg-dark-900 border border-dark-600 rounded-2xl p-3 text-white focus:border-brand-cyan outline-none cursor-pointer font-bold text-brand-cyan">
                             <option value="video">🎥 Video (Standard 16:9 Long Video)</option>
-                            <option value="shorts">⚡ Shorts (Vertical 9:16 Short Video)</option>
+                            <option value="shorts">⚡ Shorts (Vertical 9:16 Full Screen)</option>
                         </select>
                     </div>
                     <div>
@@ -249,11 +279,20 @@
                 <div id="friendsListContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
             </section>
 
-            <!-- PROFESSIONAL MESSENGER PAGE -->
+            <!-- PROFESSIONAL MESSENGER PAGE WITH SEARCH BAR -->
             <section id="page-messenger" class="page-view hidden h-[calc(100vh-90px)] max-h-[750px] bg-[#0b141a] border border-dark-700 rounded-3xl overflow-hidden flex shadow-2xl">
-                <div class="w-16 sm:w-20 border-r border-dark-700/60 flex flex-col bg-[#111b21] items-center py-3 shrink-0">
-                    <div class="mb-3 text-emerald-400 text-sm"><i class="fa-solid fa-message"></i></div>
-                    <div id="chatContactsList" class="flex-1 w-full overflow-y-auto space-y-3 px-2 flex flex-col items-center hide-scrollbar"></div>
+                <div class="w-20 sm:w-64 border-r border-dark-700/60 flex flex-col bg-[#111b21] py-3 shrink-0">
+                    <div class="px-3 mb-2 flex items-center justify-between">
+                        <span class="text-xs font-bold text-emerald-400 hidden sm:inline"><i class="fa-solid fa-message mr-1"></i> Messenger</span>
+                    </div>
+                    <!-- Messenger Search Bar -->
+                    <div class="px-2 mb-2">
+                        <div class="bg-[#202c33] rounded-xl px-2.5 py-1.5 flex items-center space-x-2 border border-dark-700">
+                            <i class="fa-solid fa-magnifying-glass text-gray-400 text-[10px]"></i>
+                            <input type="text" id="messengerSearchInput" placeholder="Search friends..." class="w-full bg-transparent outline-none text-[11px] text-white placeholder-gray-400">
+                        </div>
+                    </div>
+                    <div id="chatContactsList" class="flex-1 w-full overflow-y-auto space-y-1 px-2 hide-scrollbar"></div>
                 </div>
                 
                 <div class="flex-1 flex flex-col bg-[#0b141a] relative min-w-0 overflow-hidden" style="background-image: radial-gradient(#1f2c34 1px, transparent 1px); background-size: 24px 24px;">
@@ -269,7 +308,7 @@
 
                     <div id="chatMessagesBox" class="flex-1 p-4 overflow-y-auto space-y-3 flex flex-col">
                         <div class="m-auto text-center text-gray-500 text-[11px] bg-[#182229] px-4 py-2 rounded-xl border border-dark-700">
-                            Select a contact from the left to start encrypted messaging.
+                            Select a contact from the left or use search to start encrypted messaging.
                         </div>
                     </div>
 
@@ -323,8 +362,8 @@
                 </div>
             </section>
 
-            <!-- USER PROFILE PAGE -->
-            <section id="page-profile" class="page-view hidden max-w-2xl mx-auto space-y-4">
+            <!-- USER PROFILE PAGE WITH VIDEOS & SHORTS TABS -->
+            <section id="page-profile" class="page-view hidden max-w-3xl mx-auto space-y-4">
                 <div class="bg-dark-800 border border-dark-700 rounded-3xl p-6 shadow-2xl space-y-4">
                     <div class="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-5">
                         <div class="relative">
@@ -352,14 +391,18 @@
                     </div>
                 </div>
 
-                <div class="bg-dark-800 border border-dark-700 rounded-3xl p-5 space-y-3">
-                    <h3 class="font-bold text-white text-xs mb-3">My Uploaded Videos (Box View)</h3>
-                    <div id="myUploadedVideosGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+                <!-- Profile Content Tabs (Videos & Shorts) -->
+                <div class="bg-dark-800 border border-dark-700 rounded-3xl p-5 space-y-4">
+                    <div class="flex space-x-4 border-b border-dark-700 pb-3">
+                        <button id="profileTabVideos" class="text-xs font-bold text-brand-cyan border-b-2 border-brand-cyan pb-1 transition cursor-pointer">Videos (16:9)</button>
+                        <button id="profileTabShorts" class="text-xs font-semibold text-gray-400 hover:text-white pb-1 transition cursor-pointer">Shorts (9:16)</button>
+                    </div>
+                    <div id="profileTabContentArea" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
                 </div>
             </section>
 
-            <!-- EXTERNAL CREATOR PUBLIC PROFILE VIEW (Box Video Grid) -->
-            <section id="page-external-profile" class="page-view hidden max-w-2xl mx-auto space-y-4">
+            <!-- EXTERNAL CREATOR PUBLIC PROFILE VIEW (With Videos & Shorts Tabs) -->
+            <section id="page-external-profile" class="page-view hidden max-w-3xl mx-auto space-y-4">
                 <div class="bg-dark-800 border border-dark-700 rounded-3xl p-6 shadow-2xl space-y-4">
                     <div class="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-5">
                         <img id="extProfileAvatar" src="" alt="Avatar" class="w-20 h-20 rounded-full object-cover border-2 border-brand-cyan shadow-md">
@@ -381,9 +424,13 @@
                         </div>
                     </div>
                 </div>
-                <div class="bg-dark-800 border border-dark-700 rounded-3xl p-5 space-y-3">
-                    <h3 class="font-bold text-white text-xs mb-3">Creator's Videos (Box View)</h3>
-                    <div id="extUserVideosGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+
+                <div class="bg-dark-800 border border-dark-700 rounded-3xl p-5 space-y-4">
+                    <div class="flex space-x-4 border-b border-dark-700 pb-3">
+                        <button id="extTabVideos" class="text-xs font-bold text-brand-cyan border-b-2 border-brand-cyan pb-1 transition cursor-pointer">Videos (16:9)</button>
+                        <button id="extTabShorts" class="text-xs font-semibold text-gray-400 hover:text-white pb-1 transition cursor-pointer">Shorts (9:16)</button>
+                    </div>
+                    <div id="extTabContentArea" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
                 </div>
             </section>
 
@@ -484,7 +531,7 @@
                 <button id="closeVideoModalMobile" class="p-2 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
 
-            <!-- AdMob / Global Sponsor Ad Direct Overlay (16:9 Aspect Ratio) -->
+            <!-- AdMob Sponsored Ad Direct Overlay (16:9 Aspect Ratio) -->
             <div id="adMobAdOverlay" class="absolute inset-0 bg-dark-950 z-30 hidden flex flex-col items-center justify-center p-6 text-center text-xs">
                 <div class="bg-brand-cyan/10 border border-brand-cyan/30 p-6 rounded-3xl max-w-md w-full space-y-3 shadow-2xl relative aspect-video flex flex-col justify-center items-center">
                     <span class="absolute top-2 left-3 bg-yellow-500 text-dark-900 px-2 py-0.5 rounded font-bold uppercase text-[8px]">Ad</span>
@@ -533,7 +580,7 @@
                     <p id="modalVideoDescText" class="text-gray-300 text-[11px] line-clamp-1 whitespace-pre-wrap">No description available.</p>
                 </div>
 
-                <!-- Comments Section -->
+                <!-- Comments Section with User Avatar & Name -->
                 <div class="bg-dark-800/80 border border-dark-700 rounded-2xl p-3.5 space-y-3">
                     <div class="flex items-center justify-between cursor-pointer" id="toggleCommentsHeader">
                         <div class="flex items-center space-x-2">
@@ -576,7 +623,7 @@
         <div id="shortsCommentsList" class="flex-1 overflow-y-auto space-y-2.5 pr-1"></div>
     </div>
 
-    <!-- XSS Prevention Utility -->
+    <!-- 100% Secure XSS Prevention & Sanitization Utility -->
     <script>
         window.escapeHTML = function(str) {
             if (!str) return '';
