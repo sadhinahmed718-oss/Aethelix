@@ -96,7 +96,13 @@ function renderAdminStats() {
         const totalVideosEl = document.getElementById('adminTotalVideos');
         const pendingVideosEl = document.getElementById('adminPendingVideos');
         if (totalVideosEl) totalVideosEl.innerText = snap.size;
-        if (pendingVideosEl) pendingVideosEl.innerText = snap.docs.filter(d => d.data().flagged).length;
+        
+        let flaggedCount = snap.docs.filter(d => {
+            const data = d.data();
+            return data.flagged || data.isNsfw || data.category === 'nsfw';
+        }).length;
+        
+        if (pendingVideosEl) pendingVideosEl.innerText = flaggedCount;
     }).catch(err => console.error("Error fetching stats:", err));
 
     db.collection("users").get().then(snap => {
@@ -159,7 +165,7 @@ function renderActiveAds() {
             card.innerHTML = `
                 <div>
                     <div class="font-bold text-white truncate">${sanitizeHTML(ad.title)}</div>
-                    <a href="${sanitizeHTML(ad.targetUrl)}" target="_blank" class="text-[10px] text-brand-cyan truncate block hover:underline">${sanitizeHTML(ad.targetUrl)}</a>
+                    <a href="${sanitizeHTML(ad.targetUrl)}" target="_blank" class="text-[10px] text-cyan-400 truncate block hover:underline">${sanitizeHTML(ad.targetUrl)}</a>
                 </div>
                 <button onclick="deleteGlobalAd('${sanitizeHTML(docId)}')" class="bg-red-950/60 hover:bg-red-900 text-red-400 py-1.5 rounded-xl font-semibold cursor-pointer text-[10px] transition">Remove Ad</button>
             `;
@@ -193,7 +199,7 @@ window.inspectUser = function(email, name, avatar, subs, strikes, status) {
 
     detailsBox.innerHTML = `
         <div class="flex items-center space-x-3 bg-[#181818] p-3.5 rounded-2xl border border-[#333]">
-            <img src="${sanitizeHTML(avatar) || 'https://picsum.photos/seed/user/100/100'}" class="w-12 h-12 rounded-full object-cover border border-brand-cyan">
+            <img src="${sanitizeHTML(avatar) || 'https://picsum.photos/seed/user/100/100'}" class="w-12 h-12 rounded-full object-cover border border-cyan-400">
             <div>
                 <h4 class="font-bold text-white text-sm">${sanitizeHTML(name)}</h4>
                 <p class="text-gray-400 text-[10px]">${sanitizeHTML(email)}</p>
@@ -265,7 +271,7 @@ function renderMonetizationRequests() {
                 div.innerHTML = `
                     <div class="space-y-1">
                         <div class="font-bold text-white text-sm">${sanitizeHTML(req.channelName)} <span class="text-[10px] text-yellow-400 font-normal">(${sanitizeHTML(req.payoutMethod).toUpperCase()})</span></div>
-                        <div class="text-[10px] text-gray-400">Email: ${sanitizeHTML(req.email)} | Payout Info: <span class="text-brand-cyan">${sanitizeHTML(req.payoutInfo)}</span></div>
+                        <div class="text-[10px] text-gray-400">Email: ${sanitizeHTML(req.email)} | Payout Info: <span class="text-cyan-400">${sanitizeHTML(req.payoutInfo)}</span></div>
                         <div class="text-[10px] text-gray-300 flex items-center space-x-3">
                             <span>Current Views: <strong class="text-amber-400">${currentMonthViews.toLocaleString()}</strong></span>
                             <span>Payable: <strong class="text-emerald-400">৳${sanitizeHTML(calculatedEarnings)}</strong></span>
@@ -317,35 +323,68 @@ window.deleteMonetization = function(docId) {
     }
 };
 
-// --- AI Video Moderation Queue ---
+// --- AI Video Moderation Queue & Real-time NSFW Instant Alert ---
 function renderModerationQueue() {
-    db.collection("videos").limit(10).onSnapshot(snapshot => {
+    db.collection("videos").onSnapshot(snapshot => {
         const container = document.getElementById('adminModerationQueueList');
+        const nsfwTicker = document.getElementById('adminNotificationTicker');
+        const pendingBadge = document.getElementById('adminPendingVideos');
         if (!container) return;
+        
         container.innerHTML = '';
-
-        if (snapshot.empty) {
-            container.innerHTML = `<p class="text-[11px] text-gray-500 text-center py-4">All uploaded videos are verified and secure.</p>`;
-            return;
-        }
+        let flaggedCount = 0;
+        let hasNsfw = false;
 
         snapshot.forEach(docSnap => {
             const video = docSnap.data();
             const docId = docSnap.id;
-            const div = document.createElement('div');
-            div.className = 'bg-[#181818] border border-[#333] p-3.5 rounded-2xl flex items-center justify-between text-xs shadow';
-            div.innerHTML = `
-                <div class="flex items-center space-x-3 truncate">
-                    <img src="${sanitizeHTML(video.thumbnailUrl || video.creatorAvatar)}" class="w-12 h-8 rounded object-cover">
-                    <div class="truncate">
-                        <div class="font-bold text-white truncate">${sanitizeHTML(video.title)}</div>
-                        <div class="text-[9px] text-gray-400">Creator: ${sanitizeHTML(video.creatorName)} | Views: ${video.views || 0}</div>
+            
+            // Check if flagged or NSFW / Porn video
+            const isFlagged = video.flagged || video.isNsfw || video.category === 'nsfw';
+
+            if (isFlagged) {
+                flaggedCount++;
+                hasNsfw = true;
+
+                const div = document.createElement('div');
+                div.className = 'bg-[#181818] border border-red-500/50 p-3.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow animate-pulse';
+                div.innerHTML = `
+                    <div class="flex items-center space-x-3 truncate">
+                        <img src="${sanitizeHTML(video.thumbnailUrl || video.creatorAvatar)}" class="w-12 h-8 rounded object-cover border border-red-500">
+                        <div class="truncate">
+                            <div class="font-bold text-red-400 truncate"><i class="fa-solid fa-triangle-exclamation mr-1"></i> NSFW / Porn Detected: ${sanitizeHTML(video.title)}</div>
+                            <div class="text-[9px] text-gray-400">Creator Email: ${sanitizeHTML(video.creatorEmail || video.userId || 'Unknown')} | Views: ${video.views || 0}</div>
+                        </div>
                     </div>
-                </div>
-                <button onclick="removeVideo('${sanitizeHTML(docId)}')" class="bg-red-950/60 hover:bg-red-900 text-red-400 px-3.5 py-1.5 rounded-xl font-semibold cursor-pointer shrink-0 transition">Remove Video</button>
-            `;
-            container.appendChild(div);
+                    <div class="flex items-center space-x-2 shrink-0">
+                        <button onclick="banCreatorAndRemoveVideo('${sanitizeHTML(docId)}', '${sanitizeHTML(video.creatorEmail || video.userId)}')" class="bg-red-600 hover:bg-red-500 text-white px-3.5 py-1.5 rounded-xl font-bold cursor-pointer transition">Ban User & Delete</button>
+                        <button onclick="approveVideo('${sanitizeHTML(docId)}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl font-semibold cursor-pointer">Approve</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            }
         });
+
+        if (pendingBadge) pendingBadge.innerText = flaggedCount;
+
+        // Show/Hide Top Real-time NSFW Notification Ticker
+        if (nsfwTicker) {
+            if (hasNsfw) {
+                nsfwTicker.classList.remove('hidden');
+                nsfwTicker.classList.add('flex');
+                // Clicking ticker takes admin directly to moderation hub
+                nsfwTicker.onclick = () => {
+                    if(typeof switchAdminTab === 'function') switchAdminTab('moderation');
+                };
+            } else {
+                nsfwTicker.classList.add('hidden');
+                nsfwTicker.classList.remove('flex');
+            }
+        }
+
+        if (container.innerHTML === '') {
+            container.innerHTML = `<p class="text-[11px] text-gray-500 text-center py-4">All uploaded videos are verified and secure.</p>`;
+        }
     });
 }
 
@@ -356,6 +395,43 @@ window.removeVideo = function(docId) {
             renderAdminStats();
         }).catch(err => alert('Error: ' + sanitizeHTML(err.message)));
     }
+};
+
+window.approveVideo = function(docId) {
+    db.collection("videos").doc(docId).update({
+        flagged: false,
+        isNsfw: false,
+        status: 'approved'
+    }).then(() => {
+        alert('Video approved and cleared.');
+    }).catch(err => alert('Error: ' + sanitizeHTML(err.message)));
+};
+
+// Instant Ban User & Remove Video on NSFW Detection click
+window.banCreatorAndRemoveVideo = function(videoId, creatorEmailOrId) {
+    if (!confirm(`Are you sure you want to permanently ban this creator and delete the explicit video?`)) return;
+
+    // Delete Video
+    db.collection("videos").doc(videoId).delete().then(() => {
+        // Find and ban user by email or id
+        db.collection("users").where("email", "==", creatorEmailOrId).get().then(userSnap => {
+            if (!userSnap.empty) {
+                userSnap.forEach(uDoc => {
+                    db.collection("users").doc(uDoc.id).update({
+                        status: 'Banned',
+                        strikes: 5
+                    });
+                });
+            } else {
+                // Try direct doc ID match if email wasn't used
+                db.collection("users").doc(creatorEmailOrId).update({
+                    status: 'Banned',
+                    strikes: 5
+                }).catch(() => {});
+            }
+            alert('Creator banned and NSFW video removed successfully.');
+        });
+    }).catch(err => alert('Error: ' + sanitizeHTML(err.message)));
 };
 
 // --- User Management, Strikes & Ban Control ---
@@ -377,7 +453,7 @@ function renderUsersTable() {
             tr.className = 'hover:bg-[#181818] transition';
             tr.innerHTML = `
                 <td class="p-3.5 flex items-center space-x-2.5">
-                    <img src="${sanitizeHTML(user.avatar) || 'https://picsum.photos/seed/user/100/100'}" class="w-8 h-8 rounded-full object-cover border border-dark-600">
+                    <img src="${sanitizeHTML(user.avatar) || 'https://picsum.photos/seed/user/100/100'}" class="w-8 h-8 rounded-full object-cover border border-gray-700">
                     <span class="font-bold text-white">${sanitizeHTML(user.name) || 'User'}</span>
                     ${user.verified ? '<i class="fa-solid fa-circle-check text-emerald-400" title="Verified"></i>' : ''}
                 </td>
