@@ -80,6 +80,11 @@
                 </svg>
                 <span class="font-black text-sm tracking-wider bg-gradient-to-r from-brand-cyan to-brand-red bg-clip-text text-transparent">ZYNQRA</span>
             </a>
+            <!-- Shorts Shortcut Button next to Zynqra logo -->
+            <button id="headerShortsBtn" class="bg-dark-800 hover:bg-dark-700 border border-dark-600 text-amber-400 px-3 py-1 rounded-xl text-[11px] font-bold flex items-center space-x-1.5 transition cursor-pointer shadow">
+                <i class="fa-solid fa-bolt"></i>
+                <span>Shorts</span>
+            </button>
         </div>
 
         <!-- Search Engine -->
@@ -92,6 +97,11 @@
         </div>
 
         <div class="flex items-center space-x-2 sm:space-x-3">
+            <!-- Messenger Header Shortcut with notification badge -->
+            <button id="headerMessengerBtn" class="relative p-2.5 hover:bg-dark-700/60 rounded-full text-emerald-400 transition cursor-pointer" title="Messenger Chat">
+                <i class="fa-solid fa-message text-base"></i>
+                <span id="headerMsgBadge" class="absolute top-1 right-1 bg-red-500 text-white text-[8px] px-1.5 py-0.2 rounded-full hidden">0</span>
+            </button>
             <button id="notificationsBtn" class="relative p-2.5 hover:bg-dark-700/60 rounded-full text-gray-300 transition cursor-pointer"><i class="fa-regular fa-bell text-base"></i><span id="notifBadge" class="absolute top-1 right-1 bg-brand-red text-white text-[8px] px-1.5 py-0.2 rounded-full hidden">0</span></button>
             <div id="authContainer">
                 <button id="googleLoginBtn" class="flex items-center space-x-1.5 bg-brand-cyan/10 border border-brand-cyan/30 text-brand-cyan px-3.5 py-1.5 rounded-full font-semibold hover:bg-brand-cyan/20 transition cursor-pointer">
@@ -120,7 +130,7 @@
             <a href="#" data-page="shorts" class="nav-link flex items-center space-x-2.5 px-3 py-2.5 rounded-xl hover:bg-dark-700/60 text-gray-300 transition smooth-transition"><i class="fa-solid fa-bolt w-4 text-amber-400"></i> <span>Shorts (9:16)</span></a>
             <a href="#" data-page="downloads" class="nav-link flex items-center space-x-2.5 px-3 py-2.5 rounded-xl hover:bg-dark-700/60 text-gray-300 transition smooth-transition"><i class="fa-solid fa-download w-4 text-emerald-400"></i> <span>Your Downloads</span></a>
             <a href="#" data-page="upload" class="nav-link flex items-center space-x-2.5 px-3 py-2.5 rounded-xl hover:bg-dark-700/60 text-gray-300 transition smooth-transition"><i class="fa-solid fa-cloud-arrow-up w-4 text-brand-cyan"></i> <span>Upload Video (+)</span></a>
-            <a href="#" data-page="friends" class="nav-link flex items-center space-x-2.5 px-3 py-2.5 rounded-xl hover:bg-dark-700/60 text-gray-300 transition smooth-transition"><i class="fa-solid fa-user-group w-4 text-pink-400"></i> <span>Creators & Views</span></a>
+            <a href="#" data-page="friends" class="nav-link flex items-center space-x-2.5 px-3 py-2.5 rounded-xl hover:bg-dark-700/60 text-gray-300 transition smooth-transition"><i class="fa-solid fa-user-group w-4 text-pink-400"></i> <span>Creators & Profile Views</span></a>
             <a href="#" data-page="messenger" class="nav-link flex items-center space-x-2.5 px-3 py-2.5 rounded-xl hover:bg-dark-700/60 text-gray-300 transition smooth-transition relative">
                 <div class="flex items-center space-x-2.5"><i class="fa-solid fa-message w-4 text-emerald-400"></i> <span>Messenger Chat</span></div>
                 <span id="sidebarMsgBadge" class="absolute right-3 bg-red-500 text-white text-[9px] px-1.5 py-0.2 rounded-full hidden">0</span>
@@ -129,13 +139,14 @@
             <a href="#" data-page="profile" class="nav-link flex items-center space-x-2.5 px-3 py-2.5 rounded-xl hover:bg-dark-700/60 text-gray-300 transition smooth-transition"><i class="fa-solid fa-circle-user w-4 text-purple-400"></i> <span>You / Profile</span></a>
             <a href="#" data-page="monetization" class="nav-link flex items-center space-x-2.5 px-3 py-2.5 rounded-xl hover:bg-dark-700/60 text-gray-300 transition smooth-transition"><i class="fa-solid fa-sack-dollar w-4 text-yellow-400"></i> <span>Monetization Hub</span></a>
             <div class="border-t border-dark-700/80 my-2 pt-2 space-y-1">
-                <a href="#" data-page="privacy" class="nav-link flex items-center space-x-2.5 px-3 py-2.5 rounded-xl hover:bg-dark-700/60 text-gray-400 text-[11px]"><i class="fa-solid fa-shield-halved w-4"></i> <span>Privacy & Terms</span></a>
+                <a href="https://sadhinahmed718-oss.github.io/Zynqra-privacy-policy/" target="_blank" class="flex items-center space-x-2.5 px-3 py-2.5 rounded-xl hover:bg-dark-700/60 text-gray-400 text-[11px]"><i class="fa-solid fa-shield-halved w-4"></i> <span>Privacy & Terms</span></a>
+                <button id="logoutSidebarBtn" class="w-full text-left flex items-center space-x-2.5 px-3 py-2.5 rounded-xl hover:bg-red-950/40 text-red-400 font-semibold transition cursor-pointer"><i class="fa-solid fa-right-from-bracket w-4"></i> <span>Logout / Sign Out</span></button>
                 <a href="admin.html" id="adminPanelLink" class="hidden flex items-center space-x-2.5 px-3 py-2.5 rounded-xl bg-red-950/40 border border-red-600/30 text-red-400 font-bold mt-1"><i class="fa-solid fa-user-shield w-4"></i> <span>Admin Control</span></a>
             </div>
         </nav>
     </aside>
 
-    <!-- Main Content wrapper with professional professional centering and max width -->
+    <!-- Main Content wrapper -->
     <main id="mainContainer" class="pt-16 pl-0 md:pl-56 pr-3 sm:pr-6 transition-all duration-300 min-h-screen pb-20 flex justify-center">
         <div class="w-full max-w-7xl mx-auto space-y-5">
         
@@ -187,10 +198,17 @@
 
             <!-- UPLOAD PAGE -->
             <section id="page-upload" class="page-view hidden max-w-xl mx-auto bg-dark-800 border border-dark-700 rounded-3xl p-6 shadow-2xl space-y-4">
-                <h2 class="text-sm font-bold text-white flex items-center"><i class="fa-solid fa-cloud-arrow-up mr-2 text-brand-cyan"></i> Upload Video (Long or Shorts)</h2>
+                <h2 class="text-sm font-bold text-white flex items-center"><i class="fa-solid fa-cloud-arrow-up mr-2 text-brand-cyan"></i> Upload Video (1080p/4K Supported)</h2>
                 <form id="uploadForm" class="space-y-3.5">
                     <div>
-                        <label class="block font-medium text-gray-300 mb-1">Video File (MP4/WebM)</label>
+                        <label class="block font-medium text-gray-300 mb-1">Upload Type Selection</label>
+                        <select id="uploadTypeChoice" class="w-full bg-dark-900 border border-dark-600 rounded-2xl p-3 text-white focus:border-brand-cyan outline-none cursor-pointer font-bold text-brand-cyan">
+                            <option value="video">🎥 Video (Standard 16:9 Long Video)</option>
+                            <option value="shorts">⚡ Shorts (Vertical 9:16 Short Video)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-medium text-gray-300 mb-1">Video File (MP4/WebM - Up to 4K)</label>
                         <input type="file" id="videoFile" accept="video/*" required class="w-full bg-dark-900 border border-dark-600 rounded-2xl p-2.5 text-gray-300 file:mr-3 file:py-1 file:px-3 file:rounded-xl file:border-0 file:font-semibold file:bg-brand-cyan file:text-dark-900 cursor-pointer">
                     </div>
                     <div>
@@ -201,41 +219,32 @@
                         <label class="block font-medium text-gray-300 mb-1">Video Title</label>
                         <input type="text" id="videoTitle" placeholder="Enter title..." required class="w-full bg-dark-900 border border-dark-600 rounded-2xl p-3 text-white focus:border-brand-cyan outline-none">
                     </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block font-medium text-gray-300 mb-1">Category</label>
-                            <select id="videoCategory" class="w-full bg-dark-900 border border-dark-600 rounded-2xl p-3 text-white focus:border-brand-cyan outline-none cursor-pointer">
-                                <option value="gaming">Gaming</option>
-                                <option value="music">Music & Audio</option>
-                                <option value="tech">Tech & Coding</option>
-                                <option value="podcast">Podcasts</option>
-                                <option value="entertainment">Entertainment</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block font-medium text-gray-300 mb-1">Format Type</label>
-                            <select id="videoAspectRatio" class="w-full bg-dark-900 border border-dark-600 rounded-2xl p-3 text-white focus:border-brand-cyan outline-none cursor-pointer">
-                                <option value="16:9">Long Video (16:9 Standard)</option>
-                                <option value="9:16">Shorts Video (9:16 Vertical)</option>
-                            </select>
-                        </div>
+                    <div>
+                        <label class="block font-medium text-gray-300 mb-1">Category</label>
+                        <select id="videoCategory" class="w-full bg-dark-900 border border-dark-600 rounded-2xl p-3 text-white focus:border-brand-cyan outline-none cursor-pointer">
+                            <option value="gaming">Gaming</option>
+                            <option value="music">Music & Audio</option>
+                            <option value="tech">Tech & Coding</option>
+                            <option value="podcast">Podcasts</option>
+                            <option value="entertainment">Entertainment</option>
+                        </select>
                     </div>
                     <div>
                         <label class="block font-medium text-gray-300 mb-1">Description & Tags</label>
                         <textarea id="videoDesc" rows="2" placeholder="Description..." class="w-full bg-dark-900 border border-dark-600 rounded-2xl p-3 text-white focus:border-brand-cyan outline-none"></textarea>
                     </div>
-                    <button type="submit" id="uploadSubmitBtn" class="w-full bg-brand-cyan text-dark-900 font-bold py-3 rounded-2xl hover:bg-cyan-400 transition shadow-lg cursor-pointer">Start Secure Upload</button>
+                    <button type="submit" id="uploadSubmitBtn" class="w-full bg-brand-cyan text-dark-900 font-bold py-3 rounded-2xl hover:bg-cyan-400 transition shadow-lg cursor-pointer">Start Secure Upload (Anti-Porn Filter Active)</button>
                 </form>
             </section>
 
-            <!-- CREATORS & VIEWS PAGE -->
+            <!-- CREATORS & PROFILE VIEWS PAGE -->
             <section id="page-friends" class="page-view hidden max-w-2xl mx-auto space-y-4">
                 <div class="flex items-center justify-between">
-                    <h2 class="text-sm font-bold text-white flex items-center"><i class="fa-solid fa-user-group text-pink-400 mr-2"></i> Creators & Total Views Directory</h2>
+                    <h2 class="text-sm font-bold text-white flex items-center"><i class="fa-solid fa-user-group text-pink-400 mr-2"></i> Creators & Profile Views Directory</h2>
                 </div>
                 <div class="bg-dark-800 border border-dark-700 rounded-2xl px-4 py-2 flex items-center space-x-2">
                     <i class="fa-solid fa-magnifying-glass text-gray-400 text-xs"></i>
-                    <input type="text" id="friendSearchInput" placeholder="Search creators by name..." class="w-full bg-transparent outline-none text-xs text-white placeholder-gray-500">
+                    <input type="text" id="friendSearchInput" placeholder="Search creators by name to view profile..." class="w-full bg-transparent outline-none text-xs text-white placeholder-gray-500">
                 </div>
                 <div id="friendsListContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
             </section>
@@ -277,14 +286,6 @@
                         <span class="cursor-pointer hover:scale-125 transition">🚀</span>
                         <span class="cursor-pointer hover:scale-125 transition">🙏</span>
                         <span class="cursor-pointer hover:scale-125 transition">💯</span>
-                        <span class="cursor-pointer hover:scale-125 transition">💡</span>
-                        <span class="cursor-pointer hover:scale-125 transition">🌟</span>
-                        <span class="cursor-pointer hover:scale-125 transition">😢</span>
-                        <span class="cursor-pointer hover:scale-125 transition">😡</span>
-                        <span class="cursor-pointer hover:scale-125 transition">🤝</span>
-                        <span class="cursor-pointer hover:scale-125 transition">👑</span>
-                        <span class="cursor-pointer hover:scale-125 transition">🎵</span>
-                        <span class="cursor-pointer hover:scale-125 transition">💎</span>
                     </div>
 
                     <div class="p-3 border-t border-dark-700/60 flex items-center space-x-2 bg-[#202c33] shrink-0 z-20">
@@ -352,12 +353,12 @@
                 </div>
 
                 <div class="bg-dark-800 border border-dark-700 rounded-3xl p-5 space-y-3">
-                    <h3 class="font-bold text-white text-xs mb-3">My Uploaded Videos (Manage)</h3>
+                    <h3 class="font-bold text-white text-xs mb-3">My Uploaded Videos (Box View)</h3>
                     <div id="myUploadedVideosGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
                 </div>
             </section>
 
-            <!-- EXTERNAL CREATOR PUBLIC PROFILE VIEW -->
+            <!-- EXTERNAL CREATOR PUBLIC PROFILE VIEW (Box Video Grid) -->
             <section id="page-external-profile" class="page-view hidden max-w-2xl mx-auto space-y-4">
                 <div class="bg-dark-800 border border-dark-700 rounded-3xl p-6 shadow-2xl space-y-4">
                     <div class="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-5">
@@ -381,7 +382,7 @@
                     </div>
                 </div>
                 <div class="bg-dark-800 border border-dark-700 rounded-3xl p-5 space-y-3">
-                    <h3 class="font-bold text-white text-xs mb-3">Creator's Videos</h3>
+                    <h3 class="font-bold text-white text-xs mb-3">Creator's Videos (Box View)</h3>
                     <div id="extUserVideosGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
                 </div>
             </section>
@@ -433,12 +434,6 @@
                         </form>
                     </div>
                 </div>
-            </section>
-
-            <!-- PRIVACY POLICY -->
-            <section id="page-privacy" class="page-view hidden max-w-xl mx-auto bg-dark-800 border border-dark-700 rounded-3xl p-6 space-y-3 text-[11px]">
-                <h2 class="text-sm font-bold text-white flex items-center"><i class="fa-solid fa-shield-halved text-brand-cyan mr-2"></i> Zynqra Security & Compliance</h2>
-                <p class="text-gray-300 leading-relaxed">Zynqra operates with secure tokens, Google AdMob test monetization SDK, and deep binary content-ID fingerprinting to protect creators and maintain play store standards.</p>
             </section>
         </div>
     </main>
@@ -521,7 +516,7 @@
                     <div class="flex items-center space-x-2 overflow-x-auto pb-1 sm:pb-0">
                         <button id="modalSubscribeBtn" class="bg-white text-dark-900 px-4 py-2 rounded-full font-bold hover:bg-gray-200 transition text-xs cursor-pointer shadow">Subscribe</button>
                         <button id="modalLikeBtn" class="bg-dark-800 hover:bg-dark-700 border border-dark-700 px-3.5 py-2 rounded-full font-semibold flex items-center space-x-1.5 cursor-pointer text-xs"><i class="fa-regular fa-thumbs-up"></i> <span id="modalLikeCount">0</span></button>
-                        <button id="modalShareBtn" class="bg-dark-800 hover:bg-dark-700 border border-dark-700 px-3.5 py-2 rounded-full cursor-pointer text-xs" title="Share Video"><i class="fa-solid fa-share"></i> <span class="hidden sm:inline">Share</span></button>
+                        <button id="modalShareBtn" class="bg-dark-800 hover:bg-dark-700 border border-dark-700 px-3.5 py-2 rounded-full cursor-pointer text-xs" title="Share Video Link"><i class="fa-solid fa-share"></i> <span class="hidden sm:inline">Share</span></button>
                         <button id="modalDownloadBtn" class="bg-dark-800 hover:bg-dark-700 border border-dark-700 px-3.5 py-2 rounded-full cursor-pointer text-xs" title="Download for Offline"><i class="fa-solid fa-download"></i> <span class="hidden sm:inline">Download</span></button>
                     </div>
                 </div>
@@ -568,7 +563,7 @@
         </div>
     </div>
 
-    <!-- YouTube-Style Shorts Bottom Sheet Modal (For Shorts Comments & Interaction) -->
+    <!-- YouTube-Style Shorts Bottom Sheet Modal -->
     <div id="shortsModalSheet" class="fixed inset-x-0 bottom-0 bg-dark-900/98 backdrop-blur-xl border-t border-dark-700 z-50 rounded-t-3xl p-4 max-h-[75vh] flex flex-col hidden shadow-2xl">
         <div class="flex items-center justify-between border-b border-dark-700 pb-2 mb-3">
             <h3 id="shortsSheetTitle" class="font-bold text-white text-xs">Shorts Comments</h3>
@@ -592,4 +587,4 @@
     </script>
     <script type="module" src="app.js"></script>
 </body>
-                </html>
+</html>
