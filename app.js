@@ -1,4 +1,4 @@
-// --- Zynqra Firebase Main Script (app.js) - Secure & Optimized Version ---
+// --- Zynqra Firebase Main Script (app.js) - Fully Secure & XSS Protected ---
 
 const firebaseConfig = {
     apiKey: "AIzaSyC4_RGOzHvkjK24g4h-CtYhuwnUnvcVrg8",
@@ -26,7 +26,7 @@ let globalAllUsers = [];
 let unsubscribeChat = null;
 let editingVideoId = null;
 
-// --- Advanced XSS & Injection Protection Utility ---
+// --- Advanced XSS & Injection Protection Utility (Strict Sanitization) ---
 function sanitizeHTML(str) {
     if (!str) return '';
     return String(str)
@@ -34,7 +34,9 @@ function sanitizeHTML(str) {
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+        .replace(/'/g, '&#39;')
+        .replace(/javascript:/gi, '') // Block javascript URI scheme injection
+        .replace(/on\w+=/gi, '');    // Block inline event handlers (onerror, onload, etc.)
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -111,12 +113,14 @@ function setupFirebaseAuthState() {
     });
 }
 
-// --- Google Authentication & Logout ---
+// --- Google Authentication & Logout (Direct Click Handler Binding) ---
 function setupGoogleAuth() {
-    const loginBtn = document.getElementById('googleLoginBtn');
-    if (loginBtn) {
-        loginBtn.onclick = () => triggerGoogleLogin();
-    }
+    // হেডার ও যেকোনো জায়গায় থাকা গুগল লগইন বাটনের জন্য ইউনিভার্সাল বাইন্ডিং
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('#googleLoginBtn')) {
+            triggerGoogleLogin();
+        }
+    });
 
     const logoutBtn = document.getElementById('logoutSidebarBtn');
     if (logoutBtn) {
@@ -141,7 +145,7 @@ function initializeAppUI() {
             `;
         } else {
             authContainer.innerHTML = `
-                <button id="googleLoginBtn" onclick="triggerGoogleLogin()" class="flex items-center space-x-1.5 bg-brand-cyan/10 border border-brand-cyan/30 text-brand-cyan px-3.5 py-1.5 rounded-full font-semibold hover:bg-brand-cyan/20 transition cursor-pointer">
+                <button id="googleLoginBtn" class="flex items-center space-x-1.5 bg-brand-cyan/10 border border-brand-cyan/30 text-brand-cyan px-3.5 py-1.5 rounded-full font-semibold hover:bg-brand-cyan/20 transition cursor-pointer">
                     <i class="fa-brands fa-google"></i> <span class="hidden sm:inline">Google Login</span>
                 </button>
             `;
@@ -151,9 +155,10 @@ function initializeAppUI() {
 
 function triggerGoogleLogin() {
     const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider).then(() => {
-        alert('Successfully Logged in to Zynqra!');
+    auth.signInWithPopup(provider).then((result) => {
+        alert('Successfully Logged in to Zynqra as ' + sanitizeHTML(result.user.displayName) + '!');
     }).catch((error) => {
+        console.error("Google Auth Error:", error);
         alert('Login Failed: ' + sanitizeHTML(error.message));
     });
 }
