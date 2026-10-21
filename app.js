@@ -1,4 +1,4 @@
-// --- Zynqra Firebase Main Script (app.js) ---
+// --- Zynqra Firebase Main Script (app.js) - Secure & Optimized Version ---
 
 const firebaseConfig = {
     apiKey: "AIzaSyC4_RGOzHvkjK24g4h-CtYhuwnUnvcVrg8",
@@ -53,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     loadNotifications();
     setupQuickUploadButton();
+    setupShortsModalClose();
 });
 
 // --- Quick Upload Header Button Trigger (+) ---
@@ -60,6 +61,17 @@ function setupQuickUploadButton() {
     const quickUploadBtn = document.getElementById('quickUploadHeaderBtn');
     if (quickUploadBtn) {
         quickUploadBtn.onclick = () => switchPage('upload');
+    }
+}
+
+// --- Shorts Comment Sheet Close Fix ---
+function setupShortsModalClose() {
+    const closeBtn = document.getElementById('closeShortsSheetBtn');
+    const sheet = document.getElementById('shortsModalSheet');
+    if (closeBtn && sheet) {
+        closeBtn.onclick = () => {
+            sheet.classList.add('hidden');
+        };
     }
 }
 
@@ -191,7 +203,6 @@ function switchPage(pageId) {
     const target = document.getElementById(`page-${pageId}`);
     if (target) target.classList.remove('hidden');
     
-    // যখন শর্টস পেজ থেকে অন্য পেজে যাওয়া হবে, তখন শর্টস ভিডিওর প্লেব্যাক সম্পূর্ণ বন্ধ করা নিশ্চিত করতে হবে
     if (pageId !== 'shorts') {
         document.querySelectorAll('.shorts-slide video').forEach(v => {
             v.pause();
@@ -488,7 +499,7 @@ function loadHomeShortsCarousel(videos) {
     });
 }
 
-// --- SHORTS PLAYER WITH AUTO INTERSECTION OBSERVER (Voice Mute/Unmute on Scroll) ---
+// --- SHORTS PLAYER WITH AUTO INTERSECTION OBSERVER ---
 function loadShortsFeed() {
     db.collection("videos").where("aspectRatio", "==", "9:16").onSnapshot((snapshot) => {
         const container = document.getElementById('shortsPlayerContainer');
@@ -533,7 +544,6 @@ function loadShortsFeed() {
             `;
             const videoEl = slide.querySelector('video');
             
-            // ক্লিক করলে প্লে/পজ হবে
             slide.addEventListener('click', (e) => {
                 if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'I' && e.target.tagName !== 'IMG' && e.target.tagName !== 'SPAN') {
                     if (videoEl.paused) {
@@ -546,7 +556,6 @@ function loadShortsFeed() {
             container.appendChild(slide);
         });
 
-        // Intersection Observer দিয়ে অটো ভয়েস মিউট/আনমিউট ও প্লে/পজ নিশ্চিত করা
         const observerOptions = {
             root: container,
             threshold: 0.6
@@ -630,7 +639,7 @@ function renderShortsComments(id) {
     });
 }
 
-// --- EXTERNAL PUBLIC PROFILE VIEW & TABS (Videos & Shorts) ---
+// --- EXTERNAL PUBLIC PROFILE VIEW & TABS (Videos & Shorts Box Style) ---
 function openExternalProfile(email) {
     db.collection("users").doc(email).get().then((doc) => {
         if (!doc.exists) {
@@ -986,17 +995,12 @@ function renderChatMessages() {
 
 // --- NOTIFICATIONS SYSTEM ---
 function loadNotifications() {
-    const notifBadge = document.getElementById('notifBadge');
     const headerMsgBadge = document.getElementById('headerMsgBadge');
     const sidebarMsgBadge = document.getElementById('sidebarMsgBadge');
-    const notificationsBtn = document.getElementById('notificationsBtn');
-    if (!notifBadge || !notificationsBtn) return;
 
     if (currentUser) {
         db.collection("notifications").where("recipient", "==", currentUser.email).orderBy("date", "desc").onSnapshot((snapshot) => {
             if (!snapshot.empty) {
-                notifBadge.innerText = snapshot.size;
-                notifBadge.classList.remove('hidden');
                 if (headerMsgBadge) {
                     headerMsgBadge.innerText = snapshot.size;
                     headerMsgBadge.classList.remove('hidden');
@@ -1006,16 +1010,16 @@ function loadNotifications() {
                     sidebarMsgBadge.classList.remove('hidden');
                 }
             } else {
-                notifBadge.classList.add('hidden');
                 if (headerMsgBadge) headerMsgBadge.classList.add('hidden');
                 if (sidebarMsgBadge) sidebarMsgBadge.classList.add('hidden');
             }
         });
     }
 
-    notificationsBtn.onclick = () => {
-        switchPage('messenger');
-    };
+    const headerMessengerBtn = document.getElementById('headerMessengerBtn');
+    if (headerMessengerBtn) {
+        headerMessengerBtn.onclick = () => switchPage('messenger');
+    }
 }
 
 // --- PROFILE EDIT MODAL ---
@@ -1090,7 +1094,6 @@ function setupProfileEditModal() {
         });
     }
 
-    // Messenger Search Bar Listener
     const messengerSearchInput = document.getElementById('messengerSearchInput');
     if (messengerSearchInput) {
         messengerSearchInput.addEventListener('input', (e) => {
@@ -1339,7 +1342,7 @@ function setupEventListeners() {
     }
 }
 
-// --- PROFILE & TABS (Videos & Shorts) ---
+// --- PROFILE & TABS (Videos & Shorts Box Style) ---
 function loadAnalytics() {
     if (!currentUser) return;
     db.collection("videos").where("creatorEmail", "==", currentUser.email).get().then((snapshot) => {
@@ -1415,7 +1418,7 @@ function loadUserProfile() {
 
             filtered.forEach(v => {
                 area.innerHTML += `
-                    <div class="bg-dark-900 border border-dark-700 rounded-2xl overflow-hidden p-3 flex items-center justify-between">
+                    <div class="bg-dark-900 border border-dark-700 rounded-2xl overflow-hidden p-3 flex items-center justify-between shadow-md">
                         <div class="flex items-center space-x-2.5 truncate">
                             <img src="${sanitizeHTML(v.thumbnailUrl || v.creatorAvatar)}" class="w-16 h-10 rounded-xl object-cover">
                             <div class="truncate">
