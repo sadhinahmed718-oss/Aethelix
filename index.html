@@ -2,7 +2,7 @@
 <html lang="bn" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Zynqra - World's 1st Secure Global Video Platform</title>
     <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#0f0f0f">
@@ -30,50 +30,71 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: #0f0f0f; }
         ::-webkit-scrollbar-thumb { background: #333333; border-radius: 2px; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        .shorts-container { scroll-snap-type: y mandatory; scroll-behavior: smooth; height: calc(100vh - 80px); width: 100%; display: flex; flex-direction: column; align-items: center; }
+        /* YouTube/Facebook Reels Style Full Screen Shorts Layout */
+        .shorts-container { 
+            scroll-snap-type: y mandatory; 
+            scroll-behavior: smooth; 
+            height: 100vh; 
+            width: 100vw; 
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            background: #000;
+            margin: 0;
+            padding: 0;
+            z-index: 35;
+        }
         .shorts-slide { 
             scroll-snap-align: start; 
             scroll-snap-stop: always; 
             height: 100%; 
             width: 100%; 
-            aspect-ratio: 9 / 16; 
-            max-width: 450px; 
-            min-height: 100%;
+            max-width: 100%; 
+            min-height: 100vh;
             background: #000;
             position: relative;
             overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            border-radius: 0px;
+            margin: 0;
+            padding: 0;
         }
         .shorts-slide video {
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             object-fit: cover !important;
             position: absolute;
             top: 0;
             left: 0;
+            right: 0;
+            bottom: 0;
         }
         .smooth-transition { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
 </head>
 <body class="bg-dark-900 text-gray-100 antialiased selection:bg-brand-red selection:text-white text-xs">
 
-    <!-- Top Header Navbar -->
-    <header class="fixed top-0 left-0 right-0 h-14 bg-dark-900/95 backdrop-blur-xl border-b border-dark-700/80 z-50 flex items-center justify-between px-3 sm:px-6">
-        <div class="flex items-center space-x-3">
+    <!-- Top Header Navbar (Fixed & Safe Area padding) -->
+    <header class="fixed top-0 left-0 right-0 h-16 bg-dark-900/95 backdrop-blur-xl border-b border-dark-700/80 z-50 flex items-center justify-between px-3 sm:px-6 pt-[env(safe-area-inset-top)]">
+        <div class="flex items-center space-x-2 sm:space-x-3">
             <button id="hamburgerBtn" class="p-2 hover:bg-dark-700/60 rounded-full text-gray-300 transition smooth-transition cursor-pointer"><i class="fa-solid fa-bars text-base"></i></button>
             <a href="#" id="logoHome" class="flex items-center space-x-2 group">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="w-8 h-8" style="border-radius: 25px; background: radial-gradient(circle at center, #181818 0%, #0f0f0f 100%);">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="w-8 h-8 sm:w-9 sm:h-9" style="border-radius: 25px; background: radial-gradient(circle at center, #181818 0%, #0f0f0f 100%);">
                   <defs>
                     <linearGradient id="neonGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                       <stop offset="0%" stop-color="#00f2fe" stop-opacity="1" />
@@ -103,36 +124,30 @@
                     <path d="M 320 70 L 450 150 L 320 230 Z" stroke="#ff0033" stroke-width="25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
                   </g>
                 </svg>
-                <span class="font-black text-sm tracking-wider bg-gradient-to-r from-brand-cyan to-brand-red bg-clip-text text-transparent">ZYNQRA</span>
+                <span class="font-black text-sm sm:text-base tracking-wider bg-gradient-to-r from-brand-cyan to-brand-red bg-clip-text text-transparent">ZYNQRA</span>
             </a>
             
-            <button id="headerShortsBtn" class="bg-dark-800 hover:bg-dark-700 border border-dark-600 text-amber-400 px-3 py-1 rounded-xl text-[11px] font-bold flex items-center space-x-1.5 transition cursor-pointer shadow">
-                <i class="fa-solid fa-bolt"></i>
-                <span>Shorts</span>
-            </button>
-
-            <!-- Quick Upload Button (+) -->
-            <button id="quickUploadHeaderBtn" class="bg-gradient-to-r from-brand-cyan to-brand-red text-dark-900 p-2 rounded-xl text-xs font-black hover:scale-105 transition shadow-lg cursor-pointer flex items-center justify-center w-8 h-8" title="Upload Video or Shorts">
-                <i class="fa-solid fa-plus text-sm"></i>
+            <button id="headerShortsBtn" class="bg-gradient-to-r from-amber-500/20 to-brand-red/25 hover:from-amber-500/30 hover:to-brand-red/40 border border-amber-500/40 text-amber-400 px-3 py-1.5 rounded-2xl text-[11px] font-extrabold flex items-center space-x-2 transition-all duration-300 cursor-pointer shadow-lg hover:scale-105">
+                <i class="fa-solid fa-bolt text-amber-400 animate-pulse"></i>
+                <span class="tracking-wide hidden xs:inline">Shorts</span>
             </button>
         </div>
 
         <!-- Search Engine -->
-        <div class="flex items-center space-x-2 relative">
-            <div id="searchBarContainer" class="hidden sm:flex items-center bg-dark-800 border border-dark-600 rounded-full px-4 py-1.5 focus-within:border-brand-cyan transition shadow-inner w-48 sm:w-72">
-                <input type="text" id="searchInput" placeholder="Search videos..." class="w-full bg-transparent outline-none text-xs text-gray-200 placeholder-gray-500">
+        <div class="flex items-center space-x-2 relative px-1">
+            <div id="searchBarContainer" class="hidden md:flex items-center bg-dark-800 border border-dark-600 rounded-full px-4 py-1.5 focus-within:border-brand-cyan transition shadow-inner w-56 lg:w-72">
+                <input type="text" id="searchInput" placeholder="Search secure videos..." class="w-full bg-transparent outline-none text-xs text-gray-200 placeholder-gray-500">
             </div>
             <button id="searchIconToggleBtn" class="p-2.5 hover:bg-dark-700/60 rounded-full text-gray-300 transition cursor-pointer" title="Search"><i class="fa-solid fa-magnifying-glass text-base"></i></button>
             <div id="searchSuggestions" class="absolute top-12 right-0 w-72 bg-dark-800 border border-dark-700 rounded-2xl shadow-2xl hidden z-50 max-h-60 overflow-y-auto"></div>
         </div>
 
         <div class="flex items-center space-x-2 sm:space-x-3">
-            <button id="headerMessengerBtn" class="relative p-2.5 hover:bg-dark-700/60 rounded-full text-emerald-400 transition cursor-pointer" title="Messenger Chat">
+            <button id="headerMessengerBtn" class="relative p-2.5 hover:bg-dark-700/60 rounded-full text-emerald-400 transition cursor-pointer hidden sm:flex" title="Messenger Chat">
                 <i class="fa-solid fa-message text-base"></i>
                 <span id="headerMsgBadge" class="absolute top-1 right-1 bg-red-500 text-white text-[8px] px-1.5 py-0.2 rounded-full hidden">0</span>
             </button>
             
-            <!-- YouTube Style Google Login / User Profile Section -->
             <div id="authContainer">
                 <button id="googleLoginBtn" class="flex items-center space-x-2 bg-dark-800 hover:bg-dark-700 border border-dark-600 text-brand-cyan px-3.5 py-1.5 rounded-full font-semibold transition cursor-pointer shadow">
                     <i class="fa-brands fa-google text-sm"></i> 
@@ -140,13 +155,13 @@
                 </button>
             </div>
             <div id="userProfileHeader" class="hidden flex items-center space-x-2 cursor-pointer relative">
-                <img id="userHeaderAvatar" src="" alt="Profile" class="w-8 h-8 rounded-full object-cover border border-brand-cyan shadow-sm">
+                <img id="userHeaderAvatar" src="" alt="Profile" class="w-8 h-8 rounded-full object-cover border border-brand-cyan shadow-sm shrink-0">
             </div>
         </div>
     </header>
 
     <!-- Mobile Search Overlay -->
-    <div id="mobileSearchOverlay" class="fixed top-14 left-0 right-0 bg-dark-900 border-b border-dark-700 p-3 hidden z-40">
+    <div id="mobileSearchOverlay" class="fixed top-16 left-0 right-0 bg-dark-900 border-b border-dark-700 p-3 hidden z-40">
         <div class="flex items-center bg-dark-800 border border-dark-600 rounded-full px-4 py-2">
             <input type="text" id="mobileSearchInput" placeholder="Search secure videos..." class="w-full bg-transparent outline-none text-xs text-gray-200 placeholder-gray-500">
             <button id="closeMobileSearch" class="text-gray-400 hover:text-white px-2"><i class="fa-solid fa-xmark text-sm"></i></button>
@@ -155,7 +170,7 @@
     </div>
 
     <!-- Compact Left Sidebar -->
-    <aside id="sidebar" class="fixed left-0 top-14 bottom-0 w-56 bg-dark-900/98 backdrop-blur-xl border-r border-dark-700 z-40 transform -translate-x-full transition-transform duration-300 flex flex-col p-2.5 overflow-y-auto shadow-2xl">
+    <aside id="sidebar" class="fixed left-0 top-16 bottom-16 w-56 bg-dark-900/98 backdrop-blur-xl border-r border-dark-700 z-40 transform -translate-x-full transition-transform duration-300 flex flex-col p-2.5 overflow-y-auto shadow-2xl">
         <nav class="space-y-1 font-medium">
             <a href="#" data-page="home" class="nav-link flex items-center space-x-2.5 px-3 py-2.5 rounded-xl bg-dark-700 text-white font-semibold transition smooth-transition"><i class="fa-solid fa-house w-4 text-brand-red"></i> <span>Home Feed</span></a>
             <a href="#" data-page="shorts" class="nav-link flex items-center space-x-2.5 px-3 py-2.5 rounded-xl hover:bg-dark-700/60 text-gray-300 transition smooth-transition"><i class="fa-solid fa-bolt w-4 text-amber-400"></i> <span>Shorts (9:16)</span></a>
@@ -177,12 +192,12 @@
     </aside>
 
     <!-- Main Content wrapper -->
-    <main id="mainContainer" class="pt-16 pl-0 md:pl-56 pr-3 sm:pr-6 transition-all duration-300 min-h-screen pb-20 flex justify-center">
+    <main id="mainContainer" class="pt-20 pl-0 md:pl-56 pr-3 sm:pr-6 pl-3 sm:pl-6 transition-all duration-300 min-h-screen pb-24 flex justify-center">
         <div class="w-full max-w-7xl mx-auto space-y-5">
         
             <!-- HOME PAGE -->
             <section id="page-home" class="page-view space-y-5">
-                <div class="flex items-center space-x-2.5 overflow-x-auto hide-scrollbar pb-1 font-medium pt-2">
+                <div class="flex items-center space-x-2.5 overflow-x-auto hide-scrollbar pb-1 font-medium pt-1">
                     <button data-category="all" class="category-chip bg-white text-dark-900 px-4 py-2 rounded-xl font-bold shrink-0 shadow-lg cursor-pointer">All</button>
                     <button data-category="shorts" class="category-chip bg-dark-800 hover:bg-dark-700 text-amber-400 px-4 py-2 rounded-xl shrink-0 transition cursor-pointer font-bold">Shorts (9:16)</button>
                     <button data-category="gaming" class="category-chip bg-dark-800 hover:bg-dark-700 text-gray-200 px-4 py-2 rounded-xl shrink-0 transition cursor-pointer">Gaming</button>
@@ -206,10 +221,10 @@
                 <div id="videoGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-12"></div>
             </section>
 
-            <!-- SHORTS DEDICATED PLAYER -->
-            <section id="page-shorts" class="page-view hidden flex flex-col items-center justify-center pb-6">
-                <div id="shortsPlayerContainer" class="shorts-container w-full max-w-md h-[88vh] bg-black rounded-3xl overflow-y-auto relative shadow-2xl border border-dark-700 hide-scrollbar snap-y snap-mandatory flex flex-col items-center">
-                    <p class="text-gray-400 text-xs text-center mt-32">Loading Zynqra Full Screen Shorts...</p>
+            <!-- SHORTS DEDICATED FULL SCREEN PLAYER -->
+            <section id="page-shorts" class="page-view hidden flex flex-col items-center justify-center m-0 p-0">
+                <div id="shortsPlayerContainer" class="shorts-container hide-scrollbar snap-y snap-mandatory">
+                    <p class="text-gray-400 text-xs text-center">Loading Zynqra Full Screen Shorts...</p>
                 </div>
             </section>
 
@@ -279,8 +294,8 @@
                 <div id="friendsListContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
             </section>
 
-            <!-- MESSENGER PAGE -->
-            <section id="page-messenger" class="page-view hidden h-[calc(100vh-90px)] max-h-[750px] bg-[#0b141a] border border-dark-700 rounded-3xl overflow-hidden flex shadow-2xl">
+            <!-- MESSENGER PAGE (Fixed height & locked layout to prevent shaking) -->
+            <section id="page-messenger" class="page-view hidden h-[calc(100vh-140px)] max-h-[700px] bg-[#0b141a] border border-dark-700 rounded-3xl overflow-hidden flex shadow-2xl">
                 <div class="w-20 sm:w-64 border-r border-dark-700/60 flex flex-col bg-[#111b21] py-3 shrink-0">
                     <div class="px-3 mb-2 flex items-center justify-between">
                         <span class="text-xs font-bold text-emerald-400 hidden sm:inline"><i class="fa-solid fa-message mr-1"></i> Messenger</span>
@@ -483,6 +498,43 @@
         </div>
     </main>
 
+    <!-- Professional Bottom Navigation Bar (YouTube/Facebook style for Mobile) -->
+    <nav class="fixed bottom-0 left-0 right-0 h-16 bg-dark-900/95 backdrop-blur-xl border-t border-dark-700/80 z-40 flex items-center justify-around px-2 shadow-2xl">
+        <button id="bottomNavHome" data-page="home" class="flex flex-col items-center justify-center text-brand-cyan w-1/3 py-1 cursor-pointer transition hover:text-white">
+            <i class="fa-solid fa-house text-lg mb-0.5"></i>
+            <span class="text-[10px] font-bold">Home</span>
+        </button>
+        <button id="bottomNavUpload" data-page="upload" class="flex flex-col items-center justify-center text-dark-900 bg-gradient-to-r from-brand-cyan to-brand-red w-11 h-11 rounded-full shadow-lg cursor-pointer transform -translate-y-2 hover:scale-105 transition">
+            <i class="fa-solid fa-plus text-base font-black"></i>
+        </button>
+        <button id="bottomNavMessenger" data-page="messenger" class="flex flex-col items-center justify-center text-gray-400 w-1/3 py-1 cursor-pointer transition hover:text-emerald-400 relative">
+            <i class="fa-solid fa-message text-lg mb-0.5"></i>
+            <span class="text-[10px] font-semibold">Messenger</span>
+            <span id="bottomMsgBadge" class="absolute top-1 right-8 bg-red-500 text-white text-[8px] px-1.5 py-0.2 rounded-full hidden">0</span>
+        </button>
+    </nav>
+
+    <!-- SHORTS SETTINGS MODAL / POPUP (Download, Save, Delete) -->
+    <div id="shortsSettingsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-dark-800 border border-dark-700 rounded-3xl p-5 max-w-xs w-full space-y-3 shadow-2xl relative">
+            <div class="flex justify-between items-center border-b border-dark-700 pb-2">
+                <h3 class="font-bold text-white text-xs flex items-center"><i class="fa-solid fa-gear text-brand-cyan mr-1.5"></i> Shorts Options</h3>
+                <button id="closeShortsSettingsModal" class="text-gray-400 hover:text-white p-1"><i class="fa-solid fa-xmark text-sm"></i></button>
+            </div>
+            <div class="space-y-2">
+                <button id="shortsOptDownloadBtn" class="w-full flex items-center space-x-2.5 bg-dark-900 hover:bg-dark-700 p-2.5 rounded-2xl text-emerald-400 font-semibold text-xs transition cursor-pointer">
+                    <i class="fa-solid fa-download w-4"></i> <span>Download Short (Offline)</span>
+                </button>
+                <button id="shortsOptSaveBtn" class="w-full flex items-center space-x-2.5 bg-dark-900 hover:bg-dark-700 p-2.5 rounded-2xl text-brand-cyan font-semibold text-xs transition cursor-pointer">
+                    <i class="fa-solid fa-bookmark w-4"></i> <span>Save to Playlist</span>
+                </button>
+                <button id="shortsOptDeleteBtn" class="w-full flex items-center space-x-2.5 bg-red-950/30 hover:bg-red-900/50 p-2.5 rounded-2xl text-red-400 font-semibold text-xs transition cursor-pointer hidden">
+                    <i class="fa-solid fa-trash w-4"></i> <span>Delete Short</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- EDIT PROFILE MODAL -->
     <div id="editProfileModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
         <div class="bg-dark-800 border border-dark-700 rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl relative">
@@ -521,7 +573,7 @@
         </div>
     </div>
 
-    <!-- YouTube-Style Watch Modal -->
+    <!-- YouTube-Style Watch Modal (Long Video Player with Fullscreen/Rotation support) -->
     <div id="videoModal" class="fixed inset-0 bg-black/95 backdrop-blur-md z-50 hidden flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
         <div class="flex-1 flex flex-col lg:overflow-y-auto p-3 sm:p-6 space-y-4">
             <div class="flex justify-between items-center lg:hidden">
@@ -539,7 +591,7 @@
             </div>
 
             <div id="videoPlayerWrapper" class="relative bg-black aspect-video rounded-2xl overflow-hidden shadow-2xl flex items-center justify-center border border-dark-700 group">
-                <video id="modalVideoPlayer" controls autoplay class="w-full h-full object-contain"></video>
+                <video id="modalVideoPlayer" controls playsinline webkit-playsinline class="w-full h-full object-contain"></video>
             </div>
 
             <div class="space-y-3">
@@ -557,9 +609,10 @@
                         </div>
                     </div>
                     
+                    <!-- Buttons with Subscribe correctly placed in the middle -->
                     <div class="flex items-center space-x-2 overflow-x-auto pb-1 sm:pb-0">
-                        <button id="modalSubscribeBtn" class="bg-white text-dark-900 px-4 py-2 rounded-full font-bold hover:bg-gray-200 transition text-xs cursor-pointer shadow">Subscribe</button>
                         <button id="modalLikeBtn" class="bg-dark-800 hover:bg-dark-700 border border-dark-700 px-3.5 py-2 rounded-full font-semibold flex items-center space-x-1.5 cursor-pointer text-xs"><i class="fa-regular fa-thumbs-up"></i> <span id="modalLikeCount">0</span></button>
+                        <button id="modalSubscribeBtn" class="bg-white text-dark-900 px-4 py-2 rounded-full font-bold hover:bg-gray-200 transition text-xs cursor-pointer shadow">Subscribe</button>
                         <button id="modalShareBtn" class="bg-dark-800 hover:bg-dark-700 border border-dark-700 px-3.5 py-2 rounded-full cursor-pointer text-xs" title="Share Video Link"><i class="fa-solid fa-share"></i> <span class="hidden sm:inline">Share</span></button>
                         <button id="modalDownloadBtn" class="bg-dark-800 hover:bg-dark-700 border border-dark-700 px-3.5 py-2 rounded-full cursor-pointer text-xs" title="Download for Offline"><i class="fa-solid fa-download"></i> <span class="hidden sm:inline">Download</span></button>
                     </div>
@@ -618,6 +671,7 @@
         <div id="shortsCommentsList" class="flex-1 overflow-y-auto space-y-2.5 pr-1"></div>
     </div>
 
+    <!-- Advanced Military-Grade XSS Defense & Input Sanitizer Engine -->
     <script>
         window.escapeHTML = function(str) {
             if (!str) return '';
@@ -625,6 +679,26 @@
                 tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
             );
         };
+        
+        window.sanitizeInput = function(inputStr) {
+            if (!inputStr) return '';
+            const tempDiv = document.createElement('div');
+            tempDiv.textContent = inputStr;
+            return tempDiv.innerHTML;
+        };
+
+        // Strict XSS & Malicious Script Injection Interceptor
+        (function secureGlobalShield() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                params.forEach((value) => {
+                    if (/<script|javascript:|onerror=|onload=|eval\(|document\.cookie/i.test(value)) {
+                        console.warn("Security Alert: Malicious XSS payload neutralized.");
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }
+                });
+            } catch(e) {}
+        })();
     </script>
     <script type="module" src="app.js"></script>
 </body>
