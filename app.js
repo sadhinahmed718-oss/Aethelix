@@ -1,4 +1,4 @@
-// --- Zynqra Firebase Main Script (app.js) - Fully Secure & XSS Protected ---
+// --- Zynqra Firebase Main Script (app.js) - Fully Secure, XSS Protected & Algorithmic ---
 
 const firebaseConfig = {
     apiKey: "AIzaSyC4_RGOzHvkjK24g4h-CtYhuwnUnvcVrg8",
@@ -26,7 +26,7 @@ let globalAllUsers = [];
 let unsubscribeChat = null;
 let editingVideoId = null;
 
-// --- Advanced XSS & Injection Protection Utility (Strict Sanitization) ---
+// --- Advanced Military-Grade XSS & Injection Protection Utility (Strict Sanitization) ---
 function sanitizeHTML(str) {
     if (!str) return '';
     return String(str)
@@ -35,8 +35,8 @@ function sanitizeHTML(str) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;')
-        .replace(/javascript:/gi, '') // Block javascript URI scheme injection
-        .replace(/on\w+=/gi, '');    // Block inline event handlers (onerror, onload, etc.)
+        .replace(/javascript:/gi, '') 
+        .replace(/on\w+=/gi, '');    
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -113,9 +113,8 @@ function setupFirebaseAuthState() {
     });
 }
 
-// --- Google Authentication & Logout (Direct Click Handler Binding) ---
+// --- Google Authentication & Logout ---
 function setupGoogleAuth() {
-    // হেডার ও যেকোনো জায়গায় থাকা গুগল লগইন বাটনের জন্য ইউনিভার্সাল বাইন্ডিং
     document.addEventListener('click', (e) => {
         if (e.target.closest('#googleLoginBtn')) {
             triggerGoogleLogin();
@@ -172,6 +171,15 @@ function setupNavigation() {
         });
     });
 
+    const bottomNavHome = document.getElementById('bottomNavHome');
+    if (bottomNavHome) bottomNavHome.onclick = (e) => { e.preventDefault(); switchPage('home'); };
+
+    const bottomNavUpload = document.getElementById('bottomNavUpload');
+    if (bottomNavUpload) bottomNavUpload.onclick = (e) => { e.preventDefault(); switchPage('upload'); };
+
+    const bottomNavMessenger = document.getElementById('bottomNavMessenger');
+    if (bottomNavMessenger) bottomNavMessenger.onclick = (e) => { e.preventDefault(); switchPage('messenger'); };
+
     const hamburgerBtn = document.getElementById('hamburgerBtn');
     if (hamburgerBtn) {
         hamburgerBtn.addEventListener('click', () => {
@@ -188,19 +196,13 @@ function setupNavigation() {
     }
 
     const headerShortsBtn = document.getElementById('headerShortsBtn');
-    if (headerShortsBtn) {
-        headerShortsBtn.onclick = () => switchPage('shorts');
-    }
+    if (headerShortsBtn) headerShortsBtn.onclick = () => switchPage('shorts');
 
     const viewAllShortsBtn = document.getElementById('viewAllShortsBtn');
-    if (viewAllShortsBtn) {
-        viewAllShortsBtn.onclick = () => switchPage('shorts');
-    }
+    if (viewAllShortsBtn) viewAllShortsBtn.onclick = () => switchPage('shorts');
 
     const headerMessengerBtn = document.getElementById('headerMessengerBtn');
-    if (headerMessengerBtn) {
-        headerMessengerBtn.onclick = () => switchPage('messenger');
-    }
+    if (headerMessengerBtn) headerMessengerBtn.onclick = () => switchPage('messenger');
 }
 
 function switchPage(pageId) {
@@ -228,7 +230,7 @@ function switchPage(pageId) {
     if (pageId === 'downloads') loadOfflineDownloadsUI();
 }
 
-// --- DYNAMIC HOME FEED & ALGORITHM RENDERING ---
+// --- ADVANCED ALGORITHMIC HOME FEED (High Likes & Views First) ---
 function loadHomeFeed(category = 'all') {
     db.collection("videos").orderBy("date", "desc").onSnapshot((snapshot) => {
         const grid = document.getElementById('videoGrid');
@@ -237,7 +239,11 @@ function loadHomeFeed(category = 'all') {
         let videos = [];
         snapshot.forEach(doc => videos.push({ id: doc.id, ...doc.data() }));
         
-        videos.sort((a, b) => (b.views || 0) - (a.views || 0) || new Date(b.date) - new Date(a.date));
+        videos.sort((a, b) => {
+            const scoreA = (b.likes || 0) * 3 + (b.views || 0);
+            const scoreB = (a.likes || 0) * 3 + (a.views || 0);
+            return scoreB - scoreA || new Date(b.date) - new Date(a.date);
+        });
         globalAllVideos = videos;
 
         const filtered = videos.filter(v => {
@@ -305,9 +311,7 @@ function setupSearchEngine() {
         };
     }
     if (closeMobileSearch && mobileSearchOverlay) {
-        closeMobileSearch.onclick = () => {
-            mobileSearchOverlay.classList.add('hidden');
-        };
+        closeMobileSearch.onclick = () => mobileSearchOverlay.classList.add('hidden');
     }
 
     const searchInputs = [document.getElementById('searchInput'), document.getElementById('mobileSearchInput')];
@@ -359,7 +363,7 @@ function setupSearchEngine() {
     });
 }
 
-// --- CREATOR & PROFILE VIEWS DIRECTORY SEARCH ENGINE ---
+// --- CREATOR SEARCH ENGINE ---
 function setupFriendSearchEngine() {
     const friendSearchInput = document.getElementById('friendSearchInput');
     if (!friendSearchInput) return;
@@ -504,14 +508,24 @@ function loadHomeShortsCarousel(videos) {
     });
 }
 
-// --- SHORTS PLAYER WITH AUTO INTERSECTION OBSERVER ---
+// --- FULLY FIXED SHORTS FEED WITH SMOOTH VERTICAL SCROLLING & FIXED BUTTON ALIGNMENT ---
 function loadShortsFeed() {
     db.collection("videos").where("aspectRatio", "==", "9:16").onSnapshot((snapshot) => {
         const container = document.getElementById('shortsPlayerContainer');
         if (!container) return;
+        
+        // Proper CSS container setup for smooth snap scrolling
+        container.style.overflowY = 'scroll';
+        container.style.scrollSnapType = 'y mandatory';
+        container.style.height = '100%';
+        container.style.scrollbarWidth = 'none'; // Hide scrollbar for clean UI
+        
         container.innerHTML = '';
         let shorts = [];
         snapshot.forEach(doc => shorts.push({ id: doc.id, ...doc.data() }));
+
+        // Algorithmic sorting: High likes and views first (YouTube Style)
+        shorts.sort((a, b) => ((b.likes || 0) * 3 + (b.views || 0)) - ((a.likes || 0) * 3 + (a.views || 0)));
 
         if (shorts.length === 0) {
             container.innerHTML = `<p class="text-gray-400 text-xs text-center mt-32">No Shorts available.</p>`;
@@ -521,51 +535,66 @@ function loadShortsFeed() {
         shorts.forEach(short => {
             const isSubbed = currentUser && localStorage.getItem(`subscribed_${currentUser.email}_${short.creatorEmail}`);
             const slide = document.createElement('div');
+            // Added safe padding-right so texts and buttons don't overlap
             slide.className = 'shorts-slide w-full h-full relative flex items-center justify-center bg-black snap-start shrink-0';
+            
             slide.innerHTML = `
-                <video src="${sanitizeHTML(short.videoUrl)}" loop playsinline class="w-full h-full object-cover"></video>
-                <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/20 p-4 flex flex-col justify-between pointer-events-none">
+                <video src="${sanitizeHTML(short.videoUrl)}" loop playsinline webkit-playsinline class="w-full h-full object-cover"></video>
+                
+                <!-- Gradient Overlay -->
+                <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent p-4 pb-24 flex flex-col justify-between pointer-events-none">
                     <div class="flex justify-between items-center pointer-events-auto">
                         <span class="bg-amber-400 text-dark-900 font-bold text-[10px] px-3 py-1 rounded-full shadow-lg">Zynqra Short</span>
                     </div>
-                    <div class="space-y-2.5 pointer-events-auto pb-4">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-2.5 cursor-pointer" onclick="openExternalProfile('${sanitizeHTML(short.creatorEmail)}')">
-                                <img src="${sanitizeHTML(short.creatorAvatar)}" class="w-10 h-10 rounded-full border-2 border-brand-cyan shadow object-cover">
-                                <span class="font-bold text-white text-sm">${sanitizeHTML(short.creatorName)}</span>
+                    
+                    <!-- Creator Info & Properly Placed Subscribe Button (Bottom Left, leaving space on right for buttons) -->
+                    <div class="space-y-2 pointer-events-auto pb-4 pr-20">
+                        <div class="flex items-center space-x-3 flex-wrap gap-y-2">
+                            <div class="flex items-center space-x-2.5 cursor-pointer group" onclick="openExternalProfile('${sanitizeHTML(short.creatorEmail)}')">
+                                <img src="${sanitizeHTML(short.creatorAvatar)}" class="w-10 h-10 rounded-full border-2 border-brand-cyan shadow object-cover group-hover:scale-105 transition shrink-0">
+                                <div>
+                                    <span class="font-bold text-white text-xs block group-hover:text-brand-cyan transition truncate max-w-[130px] sm:max-w-[200px]">${sanitizeHTML(short.creatorName)}</span>
+                                    <span class="text-[9px] text-gray-400">${formatNumber(short.views || 0)} views</span>
+                                </div>
                             </div>
-                            <button onclick="toggleSubscribeUser('${sanitizeHTML(short.creatorEmail)}', this)" class="${isSubbed ? 'bg-dark-700 text-gray-300' : 'bg-white text-dark-900'} px-3.5 py-1.5 rounded-full text-xs font-bold transition cursor-pointer shadow">
+                            <!-- Clean & Perfectly Positioned Subscribe Button -->
+                            <button onclick="toggleSubscribeUser('${sanitizeHTML(short.creatorEmail)}', this)" class="${isSubbed ? 'bg-dark-700 text-gray-300' : 'bg-white text-dark-900'} px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shadow-md hover:scale-105 shrink-0">
                                 ${isSubbed ? 'Subscribed ✓' : 'Subscribe'}
                             </button>
                         </div>
                         <p class="text-xs text-gray-100 line-clamp-2">${sanitizeHTML(short.title)}</p>
                     </div>
                 </div>
-                <div class="absolute right-3 bottom-20 flex flex-col items-center space-y-4 pointer-events-auto">
-                    <button onclick="likeShort('${sanitizeHTML(short.id)}', ${short.likes || 0})" class="bg-dark-800/90 hover:bg-dark-700 text-white w-12 h-12 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90"><i class="fa-solid fa-heart text-brand-red text-base"></i><span class="text-[9px] font-bold mt-0.5">${formatNumber(short.likes || 0)}</span></button>
-                    <button onclick="openShortsCommentsModal('${sanitizeHTML(short.id)}')" class="bg-dark-800/90 hover:bg-dark-700 text-white w-12 h-12 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90"><i class="fa-solid fa-comment text-brand-cyan text-base"></i><span class="text-[9px] font-bold mt-0.5">${formatNumber((short.comments || []).length)}</span></button>
-                    <button onclick="navigator.clipboard.writeText(window.location.origin + window.location.pathname + '?v=' + '${sanitizeHTML(short.id)}'); alert('Unique Short share link copied to clipboard!');" class="bg-dark-800/90 hover:bg-dark-700 text-white w-12 h-12 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90"><i class="fa-solid fa-share text-emerald-400 text-base"></i><span class="text-[9px] font-bold mt-0.5">Share</span></button>
+
+                <!-- Right Side Action Buttons (Like, Comment, Share) safely separated -->
+                <div class="absolute right-3 bottom-24 flex flex-col items-center space-y-4 pointer-events-auto z-20">
+                    <button onclick="likeShort('${sanitizeHTML(short.id)}', ${short.likes || 0})" class="bg-dark-800/90 hover:bg-dark-700 text-white w-11 h-11 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90">
+                        <i class="fa-solid fa-heart text-brand-red text-sm"></i>
+                        <span class="text-[8px] font-bold mt-0.5">${formatNumber(short.likes || 0)}</span>
+                    </button>
+                    <button onclick="openShortsCommentsModal('${sanitizeHTML(short.id)}')" class="bg-dark-800/90 hover:bg-dark-700 text-white w-11 h-11 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90">
+                        <i class="fa-solid fa-comment text-brand-cyan text-sm"></i>
+                        <span class="text-[8px] font-bold mt-0.5">${formatNumber((short.comments || []).length)}</span>
+                    </button>
+                    <button onclick="navigator.clipboard.writeText(window.location.origin + window.location.pathname + '?v=' + '${sanitizeHTML(short.id)}'); alert('Unique Short share link copied to clipboard!');" class="bg-dark-800/90 hover:bg-dark-700 text-white w-11 h-11 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90">
+                        <i class="fa-solid fa-share text-emerald-400 text-sm"></i>
+                        <span class="text-[8px] font-bold mt-0.5">Share</span>
+                    </button>
                 </div>
             `;
-            const videoEl = slide.querySelector('video');
             
+            const videoEl = slide.querySelector('video');
             slide.addEventListener('click', (e) => {
-                if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'I' && e.target.tagName !== 'IMG' && e.target.tagName !== 'SPAN') {
-                    if (videoEl.paused) {
-                        videoEl.play();
-                    } else {
-                        videoEl.pause();
-                    }
+                if(!['BUTTON', 'I', 'IMG', 'SPAN'].includes(e.target.tagName)) {
+                    if (videoEl.paused) videoEl.play();
+                    else videoEl.pause();
                 }
             });
             container.appendChild(slide);
         });
 
-        const observerOptions = {
-            root: container,
-            threshold: 0.6
-        };
-
+        // Intersection Observer for Smooth Auto Play/Pause during Scroll
+        const observerOptions = { root: container, threshold: 0.6 };
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 const video = entry.target.querySelector('video');
@@ -580,9 +609,7 @@ function loadShortsFeed() {
             });
         }, observerOptions);
 
-        container.querySelectorAll('.shorts-slide').forEach(slide => {
-            observer.observe(slide);
-        });
+        container.querySelectorAll('.shorts-slide').forEach(slide => observer.observe(slide));
     });
 }
 
@@ -596,18 +623,13 @@ window.likeShort = function(id, currentLikes) {
         alert('You have already liked this short!');
         return;
     }
-    db.collection("videos").doc(id).update({
-        likes: currentLikes + 1
-    }).then(() => {
+    db.collection("videos").doc(id).update({ likes: currentLikes + 1 }).then(() => {
         localStorage.setItem(likeKey, 'true');
         alert('Short liked successfully!');
     });
 };
 
-let activeShortCommentId = null;
-
 window.openShortsCommentsModal = function(id) {
-    activeShortCommentId = id;
     const sheet = document.getElementById('shortsModalSheet');
     if (sheet) sheet.classList.remove('hidden');
     renderShortsComments(id);
@@ -644,7 +666,7 @@ function renderShortsComments(id) {
     });
 }
 
-// --- EXTERNAL PUBLIC PROFILE VIEW & TABS (Videos & Shorts Box Style) ---
+// --- EXTERNAL PUBLIC PROFILE VIEW ---
 function openExternalProfile(email) {
     db.collection("users").doc(email).get().then((doc) => {
         if (!doc.exists) {
@@ -1113,9 +1135,7 @@ function setupVideoEditModal() {
     const closeBtn = document.getElementById('closeEditVideoModal');
     const saveBtn = document.getElementById('saveVideoTitleBtn');
 
-    if (closeBtn && modal) {
-        closeBtn.onclick = () => modal.classList.add('hidden');
-    }
+    if (closeBtn && modal) closeBtn.onclick = () => modal.classList.add('hidden');
 
     if (saveBtn) {
         saveBtn.onclick = async () => {
@@ -1347,7 +1367,7 @@ function setupEventListeners() {
     }
 }
 
-// --- PROFILE & TABS (Videos & Shorts Box Style) ---
+// --- PROFILE & ANALYTICS ---
 function loadAnalytics() {
     if (!currentUser) return;
     db.collection("videos").where("creatorEmail", "==", currentUser.email).get().then((snapshot) => {
@@ -1364,7 +1384,7 @@ function loadAnalytics() {
 
             list.innerHTML += `
                 <div class="bg-dark-800 p-3 rounded-2xl flex items-center justify-between border border-dark-700 text-xs">
-                    <span class="font-bold text-white truncate max-w-[60%]">${sanitizeHTML(v.title)}</span>
+                    <span class="font-bold text-white truncate max-w-[60%]" title="${sanitizeHTML(v.title)}">${sanitizeHTML(v.title)}</span>
                     <div class="space-x-3 text-[10px] text-gray-300">
                         <span><i class="fa-solid fa-eye text-brand-cyan"></i> ${formatNumber(v.views || 0)}</span>
                         <span><i class="fa-solid fa-thumbs-up text-brand-red"></i> ${formatNumber(v.likes || 0)}</span>
