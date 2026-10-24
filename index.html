@@ -174,7 +174,7 @@
         <nav class="space-y-1 font-medium">
             <a href="#" data-page="home" class="nav-link flex items-center space-x-2.5 px-3 py-2.5 rounded-xl bg-dark-700 text-white font-semibold transition smooth-transition"><i class="fa-solid fa-house w-4 text-brand-red"></i> <span>Home Feed</span></a>
             <a href="#" data-page="shorts" class="nav-link flex items-center space-x-2.5 px-3 py-2.5 rounded-xl hover:bg-dark-700/60 text-gray-300 transition smooth-transition"><i class="fa-solid fa-bolt w-4 text-amber-400"></i> <span>Shorts (9:16)</span></a>
-            <a href="#" data-page="downloads" class="nav-link flex items-center space-x-2.5 px-3 py-2.5 rounded-xl hover:bg-dark-700/60 text-gray-300 transition smooth-transition"><i class="fa-solid fa-download w-4 text-emerald-400"></i> <span>Your Downloads</span></a>
+            <a href="#" data-page="downloads" class="nav-link flex items-center space-x-2.5 px-3 py-2.5 rounded-xl hover:bg-dark-700/60 text-gray-300 transition smooth-transition"><i class="fa-solid fa-download w-4 text-emerald-400"></i> <span>Your Downloads & Saved</span></a>
             <a href="#" data-page="upload" class="nav-link flex items-center space-x-2.5 px-3 py-2.5 rounded-xl hover:bg-dark-700/60 text-gray-300 transition smooth-transition"><i class="fa-solid fa-cloud-arrow-up w-4 text-brand-cyan"></i> <span>Upload Video (+)</span></a>
             <a href="#" data-page="friends" class="nav-link flex items-center space-x-2.5 px-3 py-2.5 rounded-xl hover:bg-dark-700/60 text-gray-300 transition smooth-transition"><i class="fa-solid fa-user-group w-4 text-pink-400"></i> <span>Creators & Profile Views</span></a>
             <a href="#" data-page="messenger" class="nav-link flex items-center space-x-2.5 px-3 py-2.5 rounded-xl hover:bg-dark-700/60 text-gray-300 transition smooth-transition relative">
@@ -228,15 +228,15 @@
                 </div>
             </section>
 
-            <!-- YOUR DOWNLOADS -->
+            <!-- YOUR DOWNLOADS & SAVED -->
             <section id="page-downloads" class="page-view hidden max-w-3xl mx-auto space-y-4">
                 <div class="bg-dark-800 border border-dark-700 rounded-3xl p-6 shadow-2xl space-y-4">
                     <div class="flex items-center justify-between border-b border-dark-700 pb-3">
-                        <h2 class="text-sm font-bold text-white flex items-center"><i class="fa-solid fa-download text-emerald-400 mr-2"></i> Your Downloaded Videos (Offline Mode)</h2>
-                        <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full text-[10px] font-semibold">Available Offline</span>
+                        <h2 class="text-sm font-bold text-white flex items-center"><i class="fa-solid fa-download text-emerald-400 mr-2"></i> Saved & Downloaded Videos</h2>
+                        <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full text-[10px] font-semibold">Offline Mode Active</span>
                     </div>
                     <div id="offlineDownloadsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div class="col-span-full text-center py-10 text-gray-500 text-xs">No downloaded videos found. Download videos while online to watch them offline anytime!</div>
+                        <div class="col-span-full text-center py-10 text-gray-500 text-xs">No saved or downloaded videos found. Save or download videos to watch them offline anytime!</div>
                     </div>
                 </div>
             </section>
@@ -294,39 +294,52 @@
                 <div id="friendsListContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
             </section>
 
-            <!-- MESSENGER PAGE (Fixed height & locked layout to prevent shaking) -->
-            <section id="page-messenger" class="page-view hidden h-[calc(100vh-140px)] max-h-[700px] bg-[#0b141a] border border-dark-700 rounded-3xl overflow-hidden flex shadow-2xl">
-                <div class="w-20 sm:w-64 border-r border-dark-700/60 flex flex-col bg-[#111b21] py-3 shrink-0">
-                    <div class="px-3 mb-2 flex items-center justify-between">
-                        <span class="text-xs font-bold text-emerald-400 hidden sm:inline"><i class="fa-solid fa-message mr-1"></i> Messenger</span>
-                    </div>
-                    <div class="px-2 mb-2">
-                        <div class="bg-[#202c33] rounded-xl px-2.5 py-1.5 flex items-center space-x-2 border border-dark-700">
-                            <i class="fa-solid fa-magnifying-glass text-gray-400 text-[10px]"></i>
-                            <input type="text" id="messengerSearchInput" placeholder="Search friends..." class="w-full bg-transparent outline-none text-[11px] text-white placeholder-gray-400">
+            <!-- MESSENGER PAGE (Updated with Block/Unblock & `:` Option Menu) -->
+            <section id="page-messenger" class="page-view hidden h-[calc(100vh-140px)] max-h-[700px] bg-[#242526] border border-dark-700 rounded-3xl overflow-hidden flex flex-col shadow-2xl">
+                <!-- Top Horizontal Friend Selector Bar with Search Icon -->
+                <div class="bg-[#18191a] border-b border-dark-700/60 p-2.5 flex items-center space-x-3 shrink-0">
+                    <div class="relative">
+                        <button id="toggleMessengerSearchBtn" class="w-10 h-10 bg-[#3a3b3c] hover:bg-dark-700 rounded-full flex items-center justify-center text-emerald-400 transition shadow cursor-pointer" title="Search Friends">
+                            <i class="fa-solid fa-magnifying-glass text-sm"></i>
+                        </button>
+                        <!-- Popup Search Box -->
+                        <div id="messengerSearchPopup" class="absolute top-12 left-0 w-64 bg-[#242526] border border-dark-700 rounded-2xl p-2 shadow-2xl hidden z-30">
+                            <input type="text" id="messengerSearchInput" placeholder="Search friend name..." class="w-full bg-[#3a3b3c] border border-dark-600 rounded-xl px-3 py-1.5 text-xs text-white outline-none placeholder-gray-400">
                         </div>
                     </div>
-                    <div id="chatContactsList" class="flex-1 w-full overflow-y-auto space-y-1 px-2 hide-scrollbar"></div>
+                    <!-- Horizontal Scrollable Friends List -->
+                    <div id="chatContactsHorizontalList" class="flex-1 flex items-center space-x-3 overflow-x-auto hide-scrollbar py-1"></div>
                 </div>
-                
-                <div class="flex-1 flex flex-col bg-[#0b141a] relative min-w-0 overflow-hidden" style="background-image: radial-gradient(#1f2c34 1px, transparent 1px); background-size: 24px 24px;">
-                    <div id="activeChatHeader" class="p-3 border-b border-dark-700/60 flex items-center justify-between text-xs bg-[#202c33] z-10 shadow-md shrink-0">
+
+                <!-- Chat Box Area (FB Messenger Theme) -->
+                <div class="flex-1 flex flex-col bg-[#242526] relative min-w-0 overflow-hidden">
+                    <div id="activeChatHeader" class="p-3 border-b border-dark-700/60 flex items-center justify-between text-xs bg-[#18191a] z-10 shadow-md shrink-0">
                         <div class="flex items-center space-x-2.5">
                             <div class="w-8 h-8 rounded-full bg-dark-700 flex items-center justify-center text-gray-400 font-bold text-xs"><i class="fa-solid fa-user"></i></div>
                             <div>
                                 <span class="font-bold text-white block">Select a chat</span>
-                                <span class="text-[9px] text-emerald-400">online</span>
+                                <span class="text-[9px] text-emerald-400">active now</span>
+                            </div>
+                        </div>
+                        <!-- `:` Options Menu (Block / Unblock button) -->
+                        <div class="relative">
+                            <button id="chatOptionsBtn" class="p-2 text-gray-300 hover:text-white rounded-full transition cursor-pointer hidden text-base font-black" title="Options">:</button>
+                            <div id="chatOptionsMenu" class="absolute right-0 top-8 bg-[#3a3b3c] border border-dark-600 rounded-xl shadow-2xl hidden z-30 py-1 w-32">
+                                <button id="blockUnblockUserBtn" class="w-full text-left px-3 py-1.5 text-red-400 hover:bg-dark-700 font-bold text-[11px] flex items-center space-x-1.5 cursor-pointer">
+                                    <i class="fa-solid fa-ban"></i> <span id="blockBtnText">Block User</span>
+                                </button>
                             </div>
                         </div>
                     </div>
 
                     <div id="chatMessagesBox" class="flex-1 p-4 overflow-y-auto space-y-3 flex flex-col">
-                        <div class="m-auto text-center text-gray-500 text-[11px] bg-[#182229] px-4 py-2 rounded-xl border border-dark-700">
-                            Select a contact from the left or use search to start encrypted messaging.
+                        <div class="m-auto text-center text-gray-400 text-[11px] bg-[#3a3b3c] px-4 py-2 rounded-xl border border-dark-700">
+                            Select a friend from the top bar to start chatting.
                         </div>
                     </div>
 
-                    <div id="emojiToolbar" class="bg-[#111b21] px-3 py-2 border-t border-dark-700/50 flex space-x-3 overflow-x-auto hide-scrollbar text-base shrink-0 select-none">
+                    <!-- Professional Compact Emoji Toolbar -->
+                    <div id="emojiToolbar" class="bg-[#18191a] px-3 py-1.5 border-t border-dark-700/50 flex space-x-3 overflow-x-auto hide-scrollbar text-sm shrink-0 select-none">
                         <span class="cursor-pointer hover:scale-125 transition">😊</span>
                         <span class="cursor-pointer hover:scale-125 transition">😂</span>
                         <span class="cursor-pointer hover:scale-125 transition">❤️</span>
@@ -335,15 +348,17 @@
                         <span class="cursor-pointer hover:scale-125 transition">🎉</span>
                         <span class="cursor-pointer hover:scale-125 transition">😍</span>
                         <span class="cursor-pointer hover:scale-125 transition">😎</span>
-                        <span class="cursor-pointer hover:scale-125 transition">✨</span>
-                        <span class="cursor-pointer hover:scale-125 transition">🚀</span>
-                        <span class="cursor-pointer hover:scale-125 transition">🙏</span>
-                        <span class="cursor-pointer hover:scale-125 transition">💯</span>
                     </div>
 
-                    <div class="p-3 border-t border-dark-700/60 flex items-center space-x-2 bg-[#202c33] shrink-0 z-20">
-                        <input type="text" id="chatInputMsg" placeholder="Type a message..." class="flex-1 bg-[#2a3942] border-0 rounded-lg px-4 py-2.5 text-white outline-none text-xs placeholder-gray-400 focus:ring-1 focus:ring-emerald-500 min-w-0">
-                        <button id="sendChatMsgBtn" class="bg-emerald-500 text-white w-10 h-10 rounded-full font-semibold hover:bg-emerald-600 transition shadow flex items-center justify-center cursor-pointer shrink-0"><i class="fa-solid fa-paper-plane text-xs"></i></button>
+                    <!-- Messenger Input Bar with Image Attachment Support -->
+                    <div class="p-3 border-t border-dark-700/60 flex items-center space-x-2 bg-[#18191a] shrink-0 z-20">
+                        <label for="chatImageInput" class="w-9 h-9 bg-[#3a3b3c] hover:bg-dark-600 rounded-full flex items-center justify-center text-brand-cyan cursor-pointer transition shrink-0" title="Send Image">
+                            <i class="fa-solid fa-image text-xs"></i>
+                        </label>
+                        <input type="file" id="chatImageInput" accept="image/*" class="hidden">
+                        
+                        <input type="text" id="chatInputMsg" placeholder="Aa" class="flex-1 bg-[#3a3b3c] border-0 rounded-full px-4 py-2.5 text-white outline-none text-xs placeholder-gray-400 focus:ring-1 focus:ring-brand-cyan min-w-0">
+                        <button id="sendChatMsgBtn" class="bg-brand-cyan text-dark-900 w-9 h-9 rounded-full font-bold hover:bg-cyan-400 transition shadow flex items-center justify-center cursor-pointer shrink-0"><i class="fa-solid fa-paper-plane text-xs"></i></button>
                     </div>
                 </div>
             </section>
@@ -514,7 +529,7 @@
         </button>
     </nav>
 
-    <!-- SHORTS SETTINGS MODAL / POPUP (Download, Save, Delete) -->
+    <!-- SHORTS SETTINGS MODAL / POPUP (Save, Download, Delete) -->
     <div id="shortsSettingsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-dark-800 border border-dark-700 rounded-3xl p-5 max-w-xs w-full space-y-3 shadow-2xl relative">
             <div class="flex justify-between items-center border-b border-dark-700 pb-2">
@@ -522,11 +537,11 @@
                 <button id="closeShortsSettingsModal" class="text-gray-400 hover:text-white p-1"><i class="fa-solid fa-xmark text-sm"></i></button>
             </div>
             <div class="space-y-2">
+                <button id="shortsOptSaveBtn" class="w-full flex items-center space-x-2.5 bg-dark-900 hover:bg-dark-700 p-2.5 rounded-2xl text-brand-cyan font-semibold text-xs transition cursor-pointer">
+                    <i class="fa-solid fa-bookmark w-4"></i> <span>Save Short (Add to Downloads)</span>
+                </button>
                 <button id="shortsOptDownloadBtn" class="w-full flex items-center space-x-2.5 bg-dark-900 hover:bg-dark-700 p-2.5 rounded-2xl text-emerald-400 font-semibold text-xs transition cursor-pointer">
                     <i class="fa-solid fa-download w-4"></i> <span>Download Short (Offline)</span>
-                </button>
-                <button id="shortsOptSaveBtn" class="w-full flex items-center space-x-2.5 bg-dark-900 hover:bg-dark-700 p-2.5 rounded-2xl text-brand-cyan font-semibold text-xs transition cursor-pointer">
-                    <i class="fa-solid fa-bookmark w-4"></i> <span>Save to Playlist</span>
                 </button>
                 <button id="shortsOptDeleteBtn" class="w-full flex items-center space-x-2.5 bg-red-950/30 hover:bg-red-900/50 p-2.5 rounded-2xl text-red-400 font-semibold text-xs transition cursor-pointer hidden">
                     <i class="fa-solid fa-trash w-4"></i> <span>Delete Short</span>
@@ -609,10 +624,10 @@
                         </div>
                     </div>
                     
-                    <!-- Buttons with Subscribe correctly placed in the middle -->
                     <div class="flex items-center space-x-2 overflow-x-auto pb-1 sm:pb-0">
                         <button id="modalLikeBtn" class="bg-dark-800 hover:bg-dark-700 border border-dark-700 px-3.5 py-2 rounded-full font-semibold flex items-center space-x-1.5 cursor-pointer text-xs"><i class="fa-regular fa-thumbs-up"></i> <span id="modalLikeCount">0</span></button>
                         <button id="modalSubscribeBtn" class="bg-white text-dark-900 px-4 py-2 rounded-full font-bold hover:bg-gray-200 transition text-xs cursor-pointer shadow">Subscribe</button>
+                        <button id="modalSaveBtn" class="bg-dark-800 hover:bg-dark-700 border border-dark-700 px-3.5 py-2 rounded-full cursor-pointer text-xs font-semibold" title="Save Video"><i class="fa-solid fa-bookmark text-brand-cyan"></i> <span class="hidden sm:inline">Save</span></button>
                         <button id="modalShareBtn" class="bg-dark-800 hover:bg-dark-700 border border-dark-700 px-3.5 py-2 rounded-full cursor-pointer text-xs" title="Share Video Link"><i class="fa-solid fa-share"></i> <span class="hidden sm:inline">Share</span></button>
                         <button id="modalDownloadBtn" class="bg-dark-800 hover:bg-dark-700 border border-dark-700 px-3.5 py-2 rounded-full cursor-pointer text-xs" title="Download for Offline"><i class="fa-solid fa-download"></i> <span class="hidden sm:inline">Download</span></button>
                     </div>
