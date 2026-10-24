@@ -25,6 +25,7 @@ let globalAllVideos = [];
 let globalAllUsers = [];
 let unsubscribeChat = null;
 let editingVideoId = null;
+let activeShortForModal = null;
 
 // --- Advanced Military-Grade XSS & Injection Protection Utility (Strict Sanitization) ---
 function sanitizeHTML(str) {
@@ -56,7 +57,22 @@ document.addEventListener('DOMContentLoaded', () => {
     loadNotifications();
     setupQuickUploadButton();
     setupShortsModalClose();
+    loadDynamicAds();
+    setupMessengerUIEnhancements();
 });
+
+// --- Dynamic AdSense & Admin Banner Integration ---
+function loadDynamicAds() {
+    db.collection("admin_settings").doc("ads").get().then((doc) => {
+        if (doc.exists) {
+            const adData = doc.data();
+            const adContainer = document.getElementById('dynamicAdContainer');
+            if (adContainer && adData.activeAdCode) {
+                adContainer.innerHTML = sanitizeHTML(adData.activeAdCode);
+            }
+        }
+    }).catch(() => {});
+}
 
 // --- Quick Upload Header Button Trigger (+) ---
 function setupQuickUploadButton() {
@@ -410,11 +426,17 @@ function setupFriendSearchEngine() {
     });
 }
 
+// --- SECURE 1-SUBSCRIBE PER USER SYSTEM ---
 window.toggleSubscribeUser = function(creatorEmail, btnElement) {
     if (!currentUser) {
         alert('Please login with Google to subscribe!');
         return;
     }
+    if (currentUser.email === creatorEmail) {
+        alert('You cannot subscribe to your own channel!');
+        return;
+    }
+
     const subKey = `subscribed_${currentUser.email}_${creatorEmail}`;
     db.collection("users").doc(creatorEmail).get().then(doc => {
         let currentSubs = doc.exists ? (doc.data().subs || 0) : 0;
@@ -435,7 +457,7 @@ window.toggleSubscribeUser = function(creatorEmail, btnElement) {
     });
 };
 
-// --- OFFLINE DOWNLOAD SYSTEM ---
+// --- OFFLINE DOWNLOAD SYSTEM & SHORTS SAVE/DOWNLOAD MODAL ---
 function setupOfflineDownloadsUI() {
     const downloadBtn = document.getElementById('modalDownloadBtn');
     if (downloadBtn) {
@@ -454,6 +476,45 @@ function setupOfflineDownloadsUI() {
             loadOfflineDownloadsUI();
         };
     }
+
+    // Shorts Options Modal Listeners
+    const shortsModal = document.getElementById('shortsSettingsModal');
+    const closeShortsModal = document.getElementById('closeShortsSettingsModal');
+    if (closeShortsModal && shortsModal) {
+        closeShortsModal.onclick = () => shortsModal.classList.add('hidden');
+    }
+
+    const shortsOptSaveBtn = document.getElementById('shortsOptSaveBtn');
+    if (shortsOptSaveBtn) {
+        shortsOptSaveBtn.onclick = () => {
+            if (!activeShortForModal) return;
+            let downloads = JSON.parse(localStorage.getItem('zynqra_offline_downloads') || '[]');
+            if (downloads.some(v => v.id === activeShortForModal.id)) {
+                alert('Short is already saved/downloaded!');
+            } else {
+                downloads.push(activeShortForModal);
+                localStorage.setItem('zynqra_offline_downloads', JSON.stringify(downloads));
+                alert('Short successfully saved to Downloads!');
+            }
+            shortsModal.classList.add('hidden');
+            loadOfflineDownloadsUI();
+        };
+    }
+
+    const shortsOptDownloadBtn = document.getElementById('shortsOptDownloadBtn');
+    if (shortsOptDownloadBtn) {
+        shortsOptDownloadBtn.onclick = () => {
+            if (!activeShortForModal) return;
+            let downloads = JSON.parse(localStorage.getItem('zynqra_offline_downloads') || '[]');
+            if (!downloads.some(v => v.id === activeShortForModal.id)) {
+                downloads.push(activeShortForModal);
+                localStorage.setItem('zynqra_offline_downloads', JSON.stringify(downloads));
+            }
+            alert('Short downloaded for offline viewing!');
+            shortsModal.classList.add('hidden');
+            loadOfflineDownloadsUI();
+        };
+    }
 }
 
 function loadOfflineDownloadsUI() {
@@ -464,27 +525,37 @@ function loadOfflineDownloadsUI() {
     container.innerHTML = '';
 
     if (downloads.length === 0) {
-        container.innerHTML = `<div class="col-span-full text-center py-10 text-gray-500 text-xs">No downloaded videos found. Download videos while online to watch them offline anytime!</div>`;
+        container.innerHTML = `<div class="col-span-full text-center py-10 text-gray-500 text-xs">No saved or downloaded videos found. Save or download videos to watch them offline anytime!</div>`;
         return;
     }
 
-    downloads.forEach(video => {
+    downloads.forEach((video, index) => {
+        const isShort = video.aspectRatio === '9:16';
         const card = document.createElement('div');
         card.className = 'bg-dark-900 border border-dark-700 rounded-3xl overflow-hidden shadow-md flex flex-col group';
         card.innerHTML = `
             <div class="relative aspect-video bg-black overflow-hidden">
                 <img src="${sanitizeHTML(video.thumbnailUrl || video.creatorAvatar)}" class="w-full h-full object-cover">
-                <span class="absolute bottom-2 left-2 bg-emerald-500 text-dark-900 text-[8px] px-2 py-0.5 rounded font-bold"><i class="fa-solid fa-check"></i> Offline Ready</span>
+                <span class="absolute bottom-2 left-2 bg-emerald-500 text-dark-900 text-[8px] px-2 py-0.5 rounded font-bold"><i class="fa-solid fa-check"></i> ${isShort ? 'Downloaded Short Video' : 'Saved Long Video'}</span>
             </div>
             <div class="p-3 flex items-center justify-between">
                 <div>
-                    <h4 class="font-bold text-white text-xs truncate max-w-[180px]">${sanitizeHTML(video.title)}</h4>
+                    <h4 class="font-bold text-white text-xs truncate max-w-[150px]">${sanitizeHTML(video.title)}</h4>
                     <p class="text-[9px] text-gray-400">${sanitizeHTML(video.creatorName)}</p>
                 </div>
-                <button class="play-offline-btn bg-brand-cyan text-dark-900 font-bold px-3 py-1.5 rounded-xl text-[10px] hover:bg-cyan-400 transition cursor-pointer">Play Offline</button>
+                <div class="flex space-x-1.5">
+                    <button class="play-offline-btn bg-brand-cyan text-dark-900 font-bold px-2.5 py-1.5 rounded-xl text-[10px] hover:bg-cyan-400 transition cursor-pointer">Play</button>
+                    <button class="delete-offline-btn bg-red-500/20 text-red-400 px-2.5 py-1.5 rounded-xl text-[10px] font-semibold hover:bg-red-500/30 transition cursor-pointer">Delete</button>
+                </div>
             </div>
         `;
         card.querySelector('.play-offline-btn').onclick = () => openVideoModal(video);
+        card.querySelector('.delete-offline-btn').onclick = () => {
+            downloads.splice(index, 1);
+            localStorage.setItem('zynqra_offline_downloads', JSON.stringify(downloads));
+            loadOfflineDownloadsUI();
+            alert('Removed from offline downloads.');
+        };
         container.appendChild(card);
     });
 }
@@ -508,23 +579,22 @@ function loadHomeShortsCarousel(videos) {
     });
 }
 
-// --- FULLY FIXED SHORTS FEED WITH SMOOTH VERTICAL SCROLLING & FIXED BUTTON ALIGNMENT ---
+// --- FULLY FIXED SHORTS FEED WITH REAL-TIME ALGORITHMIC SORTING ---
 function loadShortsFeed() {
     db.collection("videos").where("aspectRatio", "==", "9:16").onSnapshot((snapshot) => {
         const container = document.getElementById('shortsPlayerContainer');
         if (!container) return;
         
-        // Proper CSS container setup for smooth snap scrolling
         container.style.overflowY = 'scroll';
         container.style.scrollSnapType = 'y mandatory';
         container.style.height = '100%';
-        container.style.scrollbarWidth = 'none'; // Hide scrollbar for clean UI
+        container.style.scrollbarWidth = 'none';
         
         container.innerHTML = '';
         let shorts = [];
         snapshot.forEach(doc => shorts.push({ id: doc.id, ...doc.data() }));
 
-        // Algorithmic sorting: High likes and views first (YouTube Style)
+        // Algorithmic Sorting: High likes & views first
         shorts.sort((a, b) => ((b.likes || 0) * 3 + (b.views || 0)) - ((a.likes || 0) * 3 + (a.views || 0)));
 
         if (shorts.length === 0) {
@@ -535,19 +605,17 @@ function loadShortsFeed() {
         shorts.forEach(short => {
             const isSubbed = currentUser && localStorage.getItem(`subscribed_${currentUser.email}_${short.creatorEmail}`);
             const slide = document.createElement('div');
-            // Added safe padding-right so texts and buttons don't overlap
             slide.className = 'shorts-slide w-full h-full relative flex items-center justify-center bg-black snap-start shrink-0';
             
             slide.innerHTML = `
                 <video src="${sanitizeHTML(short.videoUrl)}" loop playsinline webkit-playsinline class="w-full h-full object-cover"></video>
                 
-                <!-- Gradient Overlay -->
                 <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent p-4 pb-24 flex flex-col justify-between pointer-events-none">
                     <div class="flex justify-between items-center pointer-events-auto">
                         <span class="bg-amber-400 text-dark-900 font-bold text-[10px] px-3 py-1 rounded-full shadow-lg">Zynqra Short</span>
+                        <button onclick="openShortsSettings('${sanitizeHTML(short.id)}')" class="bg-dark-800/80 hover:bg-dark-700 text-white w-9 h-9 rounded-full flex items-center justify-center cursor-pointer shadow"><i class="fa-solid fa-ellipsis-vertical"></i></button>
                     </div>
                     
-                    <!-- Creator Info & Properly Placed Subscribe Button (Bottom Left, leaving space on right for buttons) -->
                     <div class="space-y-2 pointer-events-auto pb-4 pr-20">
                         <div class="flex items-center space-x-3 flex-wrap gap-y-2">
                             <div class="flex items-center space-x-2.5 cursor-pointer group" onclick="openExternalProfile('${sanitizeHTML(short.creatorEmail)}')">
@@ -557,7 +625,6 @@ function loadShortsFeed() {
                                     <span class="text-[9px] text-gray-400">${formatNumber(short.views || 0)} views</span>
                                 </div>
                             </div>
-                            <!-- Clean & Perfectly Positioned Subscribe Button -->
                             <button onclick="toggleSubscribeUser('${sanitizeHTML(short.creatorEmail)}', this)" class="${isSubbed ? 'bg-dark-700 text-gray-300' : 'bg-white text-dark-900'} px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shadow-md hover:scale-105 shrink-0">
                                 ${isSubbed ? 'Subscribed ✓' : 'Subscribe'}
                             </button>
@@ -566,7 +633,6 @@ function loadShortsFeed() {
                     </div>
                 </div>
 
-                <!-- Right Side Action Buttons (Like, Comment, Share) safely separated -->
                 <div class="absolute right-3 bottom-24 flex flex-col items-center space-y-4 pointer-events-auto z-20">
                     <button onclick="likeShort('${sanitizeHTML(short.id)}', ${short.likes || 0})" class="bg-dark-800/90 hover:bg-dark-700 text-white w-11 h-11 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90">
                         <i class="fa-solid fa-heart text-brand-red text-sm"></i>
@@ -576,7 +642,7 @@ function loadShortsFeed() {
                         <i class="fa-solid fa-comment text-brand-cyan text-sm"></i>
                         <span class="text-[8px] font-bold mt-0.5">${formatNumber((short.comments || []).length)}</span>
                     </button>
-                    <button onclick="navigator.clipboard.writeText(window.location.origin + window.location.pathname + '?v=' + '${sanitizeHTML(short.id)}'); alert('Unique Short share link copied to clipboard!');" class="bg-dark-800/90 hover:bg-dark-700 text-white w-11 h-11 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90">
+                    <button onclick="navigator.clipboard.writeText(window.location.origin + window.location.pathname + '?v=' + '${sanitizeHTML(short.id)}'); alert('Short share link copied!');" class="bg-dark-800/90 hover:bg-dark-700 text-white w-11 h-11 rounded-full flex flex-col items-center justify-center shadow-xl border border-dark-600 cursor-pointer transition transform active:scale-90">
                         <i class="fa-solid fa-share text-emerald-400 text-sm"></i>
                         <span class="text-[8px] font-bold mt-0.5">Share</span>
                     </button>
@@ -593,7 +659,6 @@ function loadShortsFeed() {
             container.appendChild(slide);
         });
 
-        // Intersection Observer for Smooth Auto Play/Pause during Scroll
         const observerOptions = { root: container, threshold: 0.6 };
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
@@ -613,6 +678,17 @@ function loadShortsFeed() {
     });
 }
 
+window.openShortsSettings = function(id) {
+    db.collection("videos").doc(id).get().then(doc => {
+        if (doc.exists) {
+            activeShortForModal = { id: doc.id, ...doc.data() };
+            const modal = document.getElementById('shortsSettingsModal');
+            if (modal) modal.classList.remove('hidden');
+        }
+    });
+};
+
+// --- SECURE 1-LIKE PER USER SYSTEM ---
 window.likeShort = function(id, currentLikes) {
     if (!currentUser) {
         alert('Please login with Google to like shorts!');
@@ -645,6 +721,33 @@ function renderShortsComments(id) {
         list.innerHTML = '';
         
         document.getElementById('shortsSheetTitle').innerText = `Shorts Comments (${comments.length})`;
+
+        const postBtn = document.getElementById('postShortsCommentBtn');
+        const inputField = document.getElementById('shortsCommentInput');
+        
+        if (postBtn && inputField) {
+            postBtn.onclick = () => {
+                const text = sanitizeHTML(inputField.value.trim());
+                if (!text) return;
+                if (!currentUser) {
+                    alert('Please login to comment!');
+                    return;
+                }
+
+                const newComment = {
+                    user: currentUser.name,
+                    email: currentUser.email,
+                    text: text,
+                    date: new Date().toISOString().split('T')[0]
+                };
+
+                const updatedComments = [...comments, newComment];
+                db.collection("videos").doc(id).update({ comments: updatedComments }).then(() => {
+                    inputField.value = '';
+                    renderShortsComments(id);
+                });
+            };
+        }
 
         if (comments.length === 0) {
             list.innerHTML = `<p class="text-gray-500 text-xs text-center py-5">No comments yet. Be the first to comment!</p>`;
@@ -813,11 +916,13 @@ function openVideoModal(video) {
         db.collection("videos").doc(video.id).update({ likes: newLikes }).then(() => {
             localStorage.setItem(userLikeKey, 'true');
             document.getElementById('modalLikeCount').innerText = formatNumber(newLikes);
+            activeVideo.likes = newLikes;
             alert('Video liked successfully!');
         });
     };
 }
 
+// --- SECURE 1-VIEW PER SESSION SYSTEM ---
 function processSecureVideoView(video) {
     const viewSessionKey = `viewed_session_${video.id}`;
     const lastViewTime = localStorage.getItem(`last_view_${video.id}`);
@@ -887,7 +992,7 @@ function renderRelatedVideos(currentVideo) {
     });
 }
 
-// --- MESSENGER & LIVE SEARCH BAR ---
+// --- MESSENGER, BLOCK/UNBLOCK & IMAGE/EMOJI SUPPORT ---
 function loadFriendsList() {
     db.collection("users").get().then((snapshot) => {
         const container = document.getElementById('friendsListContainer');
@@ -926,7 +1031,7 @@ function loadFriendsList() {
 
 function loadMessengerContacts(filterQuery = '') {
     db.collection("users").get().then((snapshot) => {
-        const container = document.getElementById('chatContactsList');
+        const container = document.getElementById('chatContactsHorizontalList');
         if (!container) return;
         container.innerHTML = '';
         
@@ -944,18 +1049,17 @@ function loadMessengerContacts(filterQuery = '') {
         users.forEach(user => {
             const unreadCount = parseInt(localStorage.getItem(`unread_${currentUser?.email}_${user.email}`) || '0');
             const item = document.createElement('div');
-            item.className = 'p-2 flex flex-col items-center justify-center hover:bg-[#202c33] cursor-pointer transition border-b border-dark-700/30 relative';
+            item.className = 'flex flex-col items-center cursor-pointer shrink-0 relative group';
             item.innerHTML = `
                 <div class="relative">
-                    <img src="${sanitizeHTML(user.avatar)}" class="w-9 h-9 rounded-full object-cover border border-emerald-500/40" title="${sanitizeHTML(user.name)}">
+                    <img src="${sanitizeHTML(user.avatar)}" class="w-10 h-10 rounded-full object-cover border-2 border-brand-cyan group-hover:scale-105 transition shadow" title="${sanitizeHTML(user.name)}">
                     ${unreadCount > 0 ? `<span class="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] px-1.5 py-0.2 rounded-full font-bold">${unreadCount}</span>` : ''}
                 </div>
-                <span class="text-[9px] text-gray-300 truncate mt-1 max-w-[50px]">${sanitizeHTML(user.name)}</span>
+                <span class="text-[9px] text-gray-300 truncate mt-1 max-w-[55px]">${sanitizeHTML(user.name)}</span>
             `;
             item.onclick = () => {
                 localStorage.setItem(`unread_${currentUser?.email}_${user.email}`, '0');
                 selectActiveChatContact(user);
-                loadMessengerContacts();
             };
             container.appendChild(item);
         });
@@ -974,16 +1078,58 @@ function openChatWithUser(email) {
 function selectActiveChatContact(user) {
     activeChatContact = user;
     const header = document.getElementById('activeChatHeader');
+    const chatOptionsBtn = document.getElementById('chatOptionsBtn');
+    if (chatOptionsBtn) chatOptionsBtn.classList.remove('hidden');
+
     header.innerHTML = `
         <div class="flex items-center space-x-2.5 cursor-pointer" onclick="openExternalProfile('${sanitizeHTML(user.email)}')">
             <img src="${sanitizeHTML(user.avatar)}" class="w-8 h-8 rounded-full object-cover">
             <div>
                 <span class="font-bold text-white block text-xs hover:text-brand-cyan transition">${sanitizeHTML(user.name)}</span>
-                <span class="text-[9px] text-emerald-400">online</span>
+                <span class="text-[9px] text-emerald-400">active now</span>
             </div>
         </div>
     `;
+
+    // Setup Block / Unblock Button Status
+    const blockBtnText = document.getElementById('blockBtnText');
+    const blockKey = `blocked_${currentUser.email}_${user.email}`;
+    if (blockBtnText) {
+        blockBtnText.innerText = localStorage.getItem(blockKey) ? 'Unblock User' : 'Block User';
+    }
+
     renderChatMessages();
+}
+
+function setupMessengerUIEnhancements() {
+    const toggleSearchBtn = document.getElementById('toggleMessengerSearchBtn');
+    const searchPopup = document.getElementById('messengerSearchPopup');
+    if (toggleSearchBtn && searchPopup) {
+        toggleSearchBtn.onclick = () => searchPopup.classList.toggle('hidden');
+    }
+
+    const chatOptionsBtn = document.getElementById('chatOptionsBtn');
+    const chatOptionsMenu = document.getElementById('chatOptionsMenu');
+    if (chatOptionsBtn && chatOptionsMenu) {
+        chatOptionsBtn.onclick = () => chatOptionsMenu.classList.toggle('hidden');
+    }
+
+    const blockUnblockBtn = document.getElementById('blockUnblockUserBtn');
+    if (blockUnblockBtn) {
+        blockUnblockBtn.onclick = () => {
+            if (!activeChatContact || !currentUser) return;
+            const blockKey = `blocked_${currentUser.email}_${activeChatContact.email}`;
+            if (localStorage.getItem(blockKey)) {
+                localStorage.removeItem(blockKey);
+                alert('User unblocked successfully!');
+            } else {
+                localStorage.setItem(blockKey, 'true');
+                alert('User blocked successfully. You will no longer receive or send messages to this user.');
+            }
+            chatOptionsMenu.classList.add('hidden');
+            selectActiveChatContact(activeChatContact);
+        };
+    }
 }
 
 function renderChatMessages() {
@@ -1000,7 +1146,7 @@ function renderChatMessages() {
     unsubscribeChat = db.collection("chats").doc(chatId).collection("messages").orderBy("timestamp", "asc").onSnapshot((snapshot) => {
         box.innerHTML = '';
         if (snapshot.empty) {
-            box.innerHTML = `<div class="m-auto text-center text-gray-500 text-[10px] bg-[#182229] px-3 py-1.5 rounded-xl">No messages yet. Say hello!</div>`;
+            box.innerHTML = `<div class="m-auto text-center text-gray-400 text-[11px] bg-[#3a3b3c] px-4 py-2 rounded-xl border border-dark-700">No messages yet. Say hello!</div>`;
             return;
         }
         snapshot.forEach(doc => {
@@ -1008,9 +1154,15 @@ function renderChatMessages() {
             const isMe = msg.sender === currentUser.email;
             const msgDiv = document.createElement('div');
             msgDiv.className = `flex ${isMe ? 'justify-end' : 'justify-start'} my-1.5`;
+
+            let contentHTML = `<p>${sanitizeHTML(msg.text)}</p>`;
+            if (msg.imageUrl) {
+                contentHTML += `<img src="${sanitizeHTML(msg.imageUrl)}" class="mt-2 rounded-xl max-w-xs object-cover max-h-48">`;
+            }
+
             msgDiv.innerHTML = `
-                <div class="max-w-[75%] px-4 py-2.5 rounded-2xl text-xs shadow-md ${isMe ? 'bg-[#005c4b] text-white rounded-tr-none' : 'bg-[#202c33] text-gray-100 rounded-tl-none'}">
-                    <p>${sanitizeHTML(msg.text)}</p>
+                <div class="max-w-[75%] px-4 py-2.5 rounded-2xl text-xs shadow-md ${isMe ? 'bg-brand-cyan text-dark-900 font-medium rounded-tr-none' : 'bg-[#3a3b3c] text-gray-100 rounded-tl-none'}">
+                    ${contentHTML}
                     <div class="text-[8px] text-right text-gray-300 mt-1">${sanitizeHTML(msg.time)}</div>
                 </div>
             `;
@@ -1024,28 +1176,24 @@ function renderChatMessages() {
 function loadNotifications() {
     const headerMsgBadge = document.getElementById('headerMsgBadge');
     const sidebarMsgBadge = document.getElementById('sidebarMsgBadge');
+    const bottomMsgBadge = document.getElementById('bottomMsgBadge');
 
     if (currentUser) {
         db.collection("notifications").where("recipient", "==", currentUser.email).orderBy("date", "desc").onSnapshot((snapshot) => {
             if (!snapshot.empty) {
-                if (headerMsgBadge) {
-                    headerMsgBadge.innerText = snapshot.size;
-                    headerMsgBadge.classList.remove('hidden');
-                }
-                if (sidebarMsgBadge) {
-                    sidebarMsgBadge.innerText = snapshot.size;
-                    sidebarMsgBadge.classList.remove('hidden');
-                }
+                const countStr = snapshot.size.toString();
+                [headerMsgBadge, sidebarMsgBadge, bottomMsgBadge].forEach(badge => {
+                    if (badge) {
+                        badge.innerText = countStr;
+                        badge.classList.remove('hidden');
+                    }
+                });
             } else {
-                if (headerMsgBadge) headerMsgBadge.classList.add('hidden');
-                if (sidebarMsgBadge) sidebarMsgBadge.classList.add('hidden');
+                [headerMsgBadge, sidebarMsgBadge, bottomMsgBadge].forEach(badge => {
+                    if (badge) badge.classList.add('hidden');
+                });
             }
         });
-    }
-
-    const headerMessengerBtn = document.getElementById('headerMessengerBtn');
-    if (headerMessengerBtn) {
-        headerMessengerBtn.onclick = () => switchPage('messenger');
     }
 }
 
@@ -1295,19 +1443,30 @@ function setupEventListeners() {
         });
     }
 
+    // Chat Message & Image Upload Handling
     const sendBtn = document.getElementById('sendChatMsgBtn');
     const chatInput = document.getElementById('chatInputMsg');
+    const chatImageInput = document.getElementById('chatImageInput');
+
     if (sendBtn && chatInput) {
-        const sendAction = () => {
+        const sendAction = async (imageUrl = '') => {
             const text = sanitizeHTML(chatInput.value.trim());
-            if (!text || !activeChatContact || !currentUser) return;
+            if ((!text && !imageUrl) || !activeChatContact || !currentUser) return;
+
+            const blockKey = `blocked_${currentUser.email}_${activeChatContact.email}`;
+            const blockedByThem = localStorage.getItem(`blocked_${activeChatContact.email}_${currentUser.email}`);
+            if (localStorage.getItem(blockKey) || blockedByThem) {
+                alert('Unable to send message. You have blocked this user or are restricted.');
+                return;
+            }
 
             const chatId = [currentUser.email, activeChatContact.email].sort().join('_');
             const timeNow = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
             db.collection("chats").doc(chatId).collection("messages").add({
                 sender: currentUser.email,
-                text: text,
+                text: text || (imageUrl ? '[Image Attachment]' : ''),
+                imageUrl: imageUrl,
                 time: timeNow,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
@@ -1319,14 +1478,45 @@ function setupEventListeners() {
             db.collection("notifications").add({
                 recipient: activeChatContact.email,
                 sender: currentUser.name,
-                text: text,
+                text: text || 'Sent an image',
                 date: new Date().toISOString()
             });
 
             chatInput.value = '';
         };
-        sendBtn.onclick = sendAction;
+
+        sendBtn.onclick = () => sendAction();
         chatInput.onkeypress = (e) => { if (e.key === 'Enter') sendAction(); };
+
+        if (chatImageInput) {
+            chatImageInput.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file || !activeChatContact || !currentUser) return;
+
+                alert('Uploading image to chat...');
+                const cloudName = "u078nis6";
+                const uploadPreset = "zynqra_preset";
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('upload_preset', uploadPreset);
+
+                try {
+                    const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const resData = await res.json();
+                    if (resData.secure_url) {
+                        sendAction(resData.secure_url);
+                        chatImageInput.value = '';
+                    } else {
+                        alert('Image upload failed.');
+                    }
+                } catch(err) {
+                    alert('Error uploading chat image.');
+                }
+            };
+        }
     }
 
     const closeModal = () => {
@@ -1354,8 +1544,17 @@ function setupEventListeners() {
         postCommentBtn.onclick = () => {
             const text = sanitizeHTML(commentInput.value.trim());
             if (!text || !activeVideo) return;
+            if (!currentUser) {
+                alert('Please login to post a comment!');
+                return;
+            }
 
-            const newComment = { user: currentUser ? currentUser.name : 'Guest', text: text, date: new Date().toISOString().split('T')[0] };
+            const newComment = { 
+                user: currentUser.name, 
+                email: currentUser.email,
+                text: text, 
+                date: new Date().toISOString().split('T')[0] 
+            };
             const updatedComments = activeVideo.comments ? [...activeVideo.comments, newComment] : [newComment];
 
             db.collection("videos").doc(activeVideo.id).update({ comments: updatedComments }).then(() => {
